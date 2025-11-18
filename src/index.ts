@@ -1,6 +1,9 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+
+import authRoutes from "./routes/auth.routes"
+
 import dotenv from "dotenv";
 dotenv.config(); // Config the '.env' file to load environment variables 
 
@@ -20,6 +23,8 @@ app.use(
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
+
+app.use("/api/v1/auth", authRoutes)
 
 // Connect to MongoDB
 mongoose
