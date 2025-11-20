@@ -1,10 +1,10 @@
 import { Router } from "express"
-import { adminRegister, getMyDetails, login, register } from "../controllers/auth.controller"
+import { register, login, refreshAccessToken, adminRegister, getMyDetails } from "../controllers/auth.controller"
 
 const router = Router()
 
 // PUBLIC
-//router.post("/refresh")
+router.post("/refresh", refreshAccessToken)
 router.post("/login", login)
 router.post("/register", register)
 
