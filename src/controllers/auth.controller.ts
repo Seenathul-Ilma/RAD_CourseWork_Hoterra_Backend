@@ -18,7 +18,8 @@ export const register = async (req: Request, res: Response ) => {
             return res.status(400).json({ message: "Ooopsss.. All fields are required..!" })
         }
 
-        if( role !== Role.GUEST && role !== Role.PROPERTY_OWNER ) {
+        //if( role !== Role.GUEST && role !== Role.PROPERTY_OWNER ) {
+        if( role !== Role.GUEST && role !== Role.RECEPTIONIST ) {
             return res.status(400).json({ message: `Oooppss.. ${role} is not a valid role.` })
         }
 
@@ -29,7 +30,8 @@ export const register = async (req: Request, res: Response ) => {
 
         const hashedPassword = await bcrypt.hash(password, 10)
         
-        const accountstatus = role === Role.PROPERTY_OWNER ? Status.PENDING : Status.ACTIVE
+        //const accountstatus = role === Role.PROPERTY_OWNER ? Status.PENDING : Status.ACTIVE
+        const accountstatus = role === Role.RECEPTIONIST ? Status.PENDING : Status.ACTIVE
 
         const newUser = new User ({
             firstname,
@@ -44,8 +46,9 @@ export const register = async (req: Request, res: Response ) => {
 
         res.status(201).json({
             message: 
-                role === Role.PROPERTY_OWNER
-                    ? "Registration successful.! Your Property Owner account is under review and will be activated soon."
+                //role === Role.PROPERTY_OWNER
+                role === Role.RECEPTIONIST
+                    ? "Registration successful.! Your receptionist account is under review and will be activated soon."
                     : "Successfully registered..!",
             data: {
                 id: newUser._id,
