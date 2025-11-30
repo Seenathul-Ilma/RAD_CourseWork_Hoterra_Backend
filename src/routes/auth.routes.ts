@@ -9,7 +9,7 @@ router.post("/login", login)
 router.post("/register", register)
 
 // PROTECTED
-// ADMIN, PROPERTY_OWNER & GUEST
+// ADMIN, RECEPTIONIST & GUEST
 router.get("/me", getMyDetails)
 
 // PROTECTED
