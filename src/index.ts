@@ -3,7 +3,9 @@ import mongoose from "mongoose";
 import cors from "cors";
 import bcrypt from "bcryptjs"
 
-import authRoutes from "./routes/auth.routes"
+import authRouter from "./routes/auth.routes"
+import roomTypeRouter from "./routes/roomtype.routes"
+
 import { Role, Status, User } from "./models/User"
 
 import dotenv from "dotenv";
@@ -31,7 +33,8 @@ app.use(
   })
 );
 
-app.use("/api/v1/auth", authRoutes)
+app.use("/api/v1/auth", authRouter)
+app.use("/api/v1/roomtype", roomTypeRouter)
 
 // Connect to MongoDB
 mongoose
@@ -59,7 +62,7 @@ mongoose
         } else {
           console.log("Admin already exists. Skipping default admin creation..");
         }
-        
+
       } catch (err) {
         console.error(`Error creating default admin:, ${err}`);
       }
