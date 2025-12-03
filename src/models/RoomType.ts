@@ -5,6 +5,7 @@ export interface IRoomType extends Document{
     typename: string,
     baseprice: number,
     description: string,
+    roomTypeImageURLs: string[],   // to store the urls of the file in db
     maxadults: number,
     maxchild: number,
     maxpersons: number
@@ -15,6 +16,7 @@ const roomTypeSchema = new Schema<IRoomType>(
         typename: { type: String, required: true, unique: true },
         baseprice: { type: Number, required: true },
         description: { type: String, required: true },
+        roomTypeImageURLs: { type: [String], default: [] },
 
         maxadults: { type: Number, required: true, default: 1 },
         maxchild: { type: Number, required: true, default: 0 },
