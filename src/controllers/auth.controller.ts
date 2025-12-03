@@ -220,24 +220,38 @@ export const staffRegister = async (req: Request, res: Response) => {
 
         console.log("Checking invitation for:", email, token, new Date());
 
-        // Verify the invitation token
-        const invitation = await Invitation.findOne({ token, email, isUsed: false, expiryDate: { $gt: new Date() } });
+        // Find the invitation by token (regardless of email first)
+        const invitation = await Invitation.findOne({ token, isUsed: false, expiryDate: { $gt: new Date() } });
 
         console.log("Found unused/unexpired invitation (null or !null): ", invitation);
 
-        if(!invitation) {
-            return res.status(400).json({ message: "Invalid or expired invitation token." })
+        if (!invitation) {
+            return res.status(400).json({ message: "Invalid or expired invitation token." });
+        }
+
+        // Validate that the registration email matches the invitation email
+        if (invitation.email !== email) {
+            return res.status(400).json({ message: "Registration email does not match the invitation email." });
         }
 
         const existingUser = await User.findOne({ email })
         if(existingUser) {
-            return res.status(400).json({ message: "Email already exist..!" })
+            //return res.status(400).json({ message: "Email already exist..!" })
+            // Only allow if user is currently a 'GUEST'
+            if (!existingUser.roles.includes(Role.GUEST)) {
+                return res.status(400).json({ message: "This email is already registered with a higher role. Try logging in or use a different one." });
+            }
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const validInviteRoles = Object.values(InviteRole) as string[];
-        const userRole = validInviteRoles.includes(role) ? role : InviteRole.RECEPTIONIST;
+        //const userRole = validInviteRoles.includes(role) ? role : InviteRole.RECEPTIONIST;
+
+        if (!validInviteRoles.includes(role)) {
+            throw new Error("Invalid role");
+        }
+        const userRole = role;
 
         // Assign account status based on role
         const user_acc_status = userRole === InviteRole.ADMIN ? Status.ACTIVE : Status.PENDING;
