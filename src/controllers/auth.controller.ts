@@ -6,6 +6,7 @@ import { AuthRequest } from "../middlewares/auth"
 
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
+import { Invitation, InviteRole } from "../models/invitation"
 dotenv.config()
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string
@@ -195,6 +196,75 @@ export const adminRegister = async (req: AuthRequest, res: Response) => {
                 email: newUser.email,
                 roles: newUser.roles,
                 accountstatus: Status.ACTIVE
+            }
+        })  
+    } catch (err: any) {
+        console.error(err)
+        res.status(500).json({ message: err?.message })
+    }
+}
+
+
+export const staffRegister = async (req: Request, res: Response) => {
+    try {
+
+        /* if(!req.user) {
+            return res.status(403).json({ message: "Oooppss.. Unauthorized Access..!" })
+        }
+ */
+        const { firstname, lastname, email, password, role, token } = req.body
+
+        if(!firstname || !lastname || !email || !password || !role || !token) {
+            return res.status(400).json({ message: "Oooppss.. All fields are required..!" })
+        }
+
+        console.log("Checking invitation for:", email, token, new Date());
+
+        // Verify the invitation token
+        const invitation = await Invitation.findOne({ token, email, isUsed: false, expiryDate: { $gt: new Date() } });
+
+        console.log("Found unused/unexpired invitation (null or !null): ", invitation);
+
+        if(!invitation) {
+            return res.status(400).json({ message: "Invalid or expired invitation token." })
+        }
+
+        const existingUser = await User.findOne({ email })
+        if(existingUser) {
+            return res.status(400).json({ message: "Email already exist..!" })
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const validInviteRoles = Object.values(InviteRole) as string[];
+        const userRole = validInviteRoles.includes(role) ? role : InviteRole.RECEPTIONIST;
+
+        // Assign account status based on role
+        const user_acc_status = userRole === InviteRole.ADMIN ? Status.ACTIVE : Status.PENDING;
+
+        const newUser = new User ({
+            firstname,
+            lastname,
+            email,
+            password: hashedPassword,
+            roles: [userRole],
+            accountstatus: user_acc_status
+        })
+
+        await newUser.save()
+
+        // Mark invitation as used
+        invitation.isUsed = true;
+        invitation.usedAt = new Date();
+        await invitation.save();
+
+        res.status(201).json({
+            message: `${role} registration successful..!`,
+            data: {
+                id: newUser._id,
+                email: newUser.email,
+                roles: newUser.roles,
+                accountstatus: newUser.accountstatus
             }
         })  
     } catch (err: any) {
