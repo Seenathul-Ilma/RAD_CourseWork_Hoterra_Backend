@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs"
 
 import authRouter from "./routes/auth.routes"
 import roomTypeRouter from "./routes/roomtype.routes"
+import inviteRouter from "./routes/invite.routes"
 
 import { Role, Status, User } from "./models/User"
 
@@ -35,6 +36,7 @@ app.use(
 
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/roomtype", roomTypeRouter)
+app.use("/api/v1/invite", inviteRouter)
 
 // Connect to MongoDB
 mongoose
