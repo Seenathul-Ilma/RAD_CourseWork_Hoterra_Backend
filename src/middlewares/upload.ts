@@ -6,4 +6,7 @@ import multer from "multer";    // 1
 // we choose memory
 const storage = multer.memoryStorage()   // 2
 
-export const upload = multer({ storage })  // storage : storage   // 3
+export const upload = multer({
+    storage,  // storage : storage   // 3
+    limits: { fileSize: 20 * 1024 * 1024 } // 20MB
+})  

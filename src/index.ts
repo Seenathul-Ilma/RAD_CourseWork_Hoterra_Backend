@@ -1,7 +1,8 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import bcrypt from "bcryptjs"
+import multer from "multer";  
 
 import authRouter from "./routes/auth.routes"
 import roomTypeRouter from "./routes/roomtype.routes"
@@ -37,6 +38,26 @@ app.use(
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/roomtype", roomTypeRouter)
 app.use("/api/v1/invite", inviteRouter)
+
+// Global Multer error handler MUST be after all routes
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof multer.MulterError) {
+
+        if (err.code === "LIMIT_UNEXPECTED_FILE") {
+            return res.status(400).json({
+                message: "You can upload a maximum of 5 images."
+            });
+        }
+
+        if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({
+                message: "File too large. Maximum size is 20MB per image."
+            });
+        }
+    }
+
+    next(err);
+});
 
 // Connect to MongoDB
 mongoose
