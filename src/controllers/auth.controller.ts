@@ -118,6 +118,12 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ message: "Incorrect Password..!" })
         }
 
+        if (existingUser.accountstatus !== Status.ACTIVE) {
+            return res.status(403).json({
+                message: "Your account is not active. Please contact admin."
+            });
+        }
+
         const accessToken = signAccessToken(existingUser)
         const refreshToken = signRefreshToken(existingUser)
 
@@ -126,6 +132,7 @@ export const login = async (req: Request, res: Response) => {
             data: {
                 email: existingUser.email,
                 role: existingUser.roles,
+                accountstatus: existingUser.accountstatus, // Include this
                 accessToken, // token (accessToken)
                 refreshToken // refreshToken
             }
