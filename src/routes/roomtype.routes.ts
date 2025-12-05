@@ -4,16 +4,19 @@ import { authenticate } from "../middlewares/auth";
 import { authorization } from "../middlewares/roles";
 import { upload } from "../middlewares/upload";
 import { Role } from "../models/User";
+import { aiGeneratedRoomDescription } from "../controllers/ai.controller";
 
-const router = Router()
+const route = Router()
 
-router.get("/", getAllRoomType)
+route.get("/", getAllRoomType)
 
 // image urls in an array & maxcount 5
-router.post("/create", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), upload.array("image", 5), saveRoomType)
+route.post("/create", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), upload.array("image", 5), saveRoomType)
 
-router.post("/update", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), updateRoomType)
+route.post("/ai/generate", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), aiGeneratedRoomDescription)
 
-router.post("/delete", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), deleteRoomType)
+route.put("/update/:id", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), upload.array("image", 5), updateRoomType)
 
-export default router
+route.delete("/delete/:id", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), deleteRoomType)
+
+export default route
