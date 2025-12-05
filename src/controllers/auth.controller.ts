@@ -3,10 +3,10 @@ import { Request, Response } from "express"
 import { IUser, Role, Status, User } from "../models/User"
 import { signAccessToken, signRefreshToken } from "../utils/tokens"
 import { AuthRequest } from "../middlewares/auth"
+import { Invitation, InviteRole } from "../models/Invitation"
 
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
-import { Invitation, InviteRole } from "../models/Invitation"
 dotenv.config()
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string
