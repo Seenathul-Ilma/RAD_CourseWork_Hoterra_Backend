@@ -3,8 +3,36 @@ import { AuthRequest } from "../middlewares/auth";
 import { RoomType } from "../models/RoomType";
 import cloudinary from "../config/cloudinary";
 
+// api/v1/roomtype?page=1&limit=10
 export const getAllRoomType = async (req: Request, res: Response) => {
-    
+    // pagination  (page, limit)
+    // use query params
+    try {
+
+        const page = parseInt(req.query.page as string) || 1
+        const limit = parseInt(req.query.limit as string) || 10
+
+        const skip = (page - 1) * limit
+
+        const roomtypes = await RoomType.find()
+        .sort({ typename : 1})   // to get in desc order
+        .skip(skip)   // ignore data for pagination
+        .limit(limit)  // currently needed data count
+
+        const total = await RoomType.countDocuments()  // to get total document count
+        
+        res.status(200).json({
+            message: "Roomtypes retrieved successfully..!",
+            data: roomtypes,
+            totalPages: Math.ceil(total / limit),
+            totalCount: total,
+            page
+        })
+        
+    } catch (err:any) {
+        console.error(err)
+        res.status(500).json({ message: err?.message })
+    }
 }
 
 export const saveRoomType = async (req: AuthRequest, res: Response) => {
@@ -22,13 +50,24 @@ export const saveRoomType = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        const exists = await RoomType.findOne({ typename: typename.trim() });
+        /* const exists = await RoomType.findOne({ typename: typename.trim() });
         if (exists) {
             return res.status(409).json({
                 message: "Room type already exists."
             });
-        }
+        } */
 
+        const normalizedName = typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
+
+        const allRoomTypes = await RoomType.find({});
+        const duplicate = allRoomTypes.find(t => 
+            t.typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "") === normalizedName
+        );
+        
+        if (duplicate) {
+            return res.status(409).json({ message: "Room type already exists." });
+        }
+        
         /* if (req.file) {
             const result:any = await new Promise((resolve, reject)=>{
                 const upload_stream = cloudinary.uploader.upload_stream(   // cloudinary in-built structure eka
@@ -102,11 +141,27 @@ export const updateRoomType = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: "Room type not found." });
         }
 
-        if (typename && typename.trim() !== roomType.typename) {
+        /* if (typename && typename.trim() !== roomType.typename) {
             const exists = await RoomType.findOne({ typename: typename.trim() });
             if (exists) {
                 return res.status(409).json({ message: "Room type already exists." });
             }
+            roomType.typename = typename.trim();
+        } */
+
+        if (typename && typename.trim() !== roomType.typename) {
+            const normalizedName = typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
+
+            const allRoomTypes = await RoomType.find({});
+            const duplicate = allRoomTypes.find(t => 
+                t._id.toString() !== id && // exclude the current room type
+                t.typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "") === normalizedName
+            );
+            
+            if (duplicate) {
+                return res.status(409).json({ message: "Room type already exists." });
+            }
+            
             roomType.typename = typename.trim();
         }
 
