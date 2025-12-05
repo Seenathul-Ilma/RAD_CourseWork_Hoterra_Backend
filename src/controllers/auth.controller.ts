@@ -6,7 +6,7 @@ import { AuthRequest } from "../middlewares/auth"
 
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
-import { Invitation, InviteRole } from "../models/invitation"
+import { Invitation, InviteRole } from "../models/Invitation"
 dotenv.config()
 
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string

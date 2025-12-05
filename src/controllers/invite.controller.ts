@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { Role, User } from "../models/User";
-import { Invitation, InviteRole } from "../models/invitation";
+import { Invitation, InviteRole } from "../models/Invitation";
 import { Request, Response } from "express";
 import transporter from "../config/transporter";
 

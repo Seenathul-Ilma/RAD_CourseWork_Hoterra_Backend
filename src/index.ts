@@ -7,6 +7,7 @@ import multer from "multer";
 import authRouter from "./routes/auth.routes"
 import roomTypeRouter from "./routes/roomtype.routes"
 import inviteRouter from "./routes/invite.routes"
+import amenityRouter from "./routes/amenity.routes"
 
 import { Role, Status, User } from "./models/User"
 
@@ -38,6 +39,7 @@ app.use(
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/roomtype", roomTypeRouter)
 app.use("/api/v1/invite", inviteRouter)
+app.use("/api/v1/amenity", amenityRouter)
 
 // Global Multer error handler MUST be after all routes
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

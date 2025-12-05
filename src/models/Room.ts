@@ -15,6 +15,7 @@ export interface IRoom extends Document{
     roomImageURLs: string[],   // to store the urls of the file in db
     pricepernight: number,
     availability: Availability,
+    roomamenities: mongoose.Types.ObjectId,
     createdAt?: Date
     updatedAt?: Date
 }
@@ -29,7 +30,8 @@ const roomSchema = new Schema<IRoom>(
             type: String,
             enum: Object.values(Availability),
             default: Availability.AVAILABLE 
-        }
+        },
+        roomamenities: [{ type: Schema.Types.ObjectId, ref: "RoomAmenity" }]
     },
     {
         timestamps: true
