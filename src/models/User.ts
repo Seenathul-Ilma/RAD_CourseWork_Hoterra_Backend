@@ -18,6 +18,7 @@ export interface IUser extends Document{
     firstname: string,
     lastname: string,
     email: string,
+    phone: string,
     password: string,
     roles: Role[],
     accountstatus: Status
@@ -28,6 +29,7 @@ const userSchema = new Schema<IUser>(
         firstname: { type: String, required: true },
         lastname: { type: String, required: true },
         email: { type: String, required: true, unique: true, lowercase: true, match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"] },
+        phone: { type: String, required: true },
         password: { type: String, required: true },
         roles: { type:[String], enum: Object.values(Role), default: [Role.GUEST] },
         accountstatus: { type:String, enum: Object.values(Status), default: Status.PENDING }

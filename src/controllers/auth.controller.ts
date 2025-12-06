@@ -14,9 +14,9 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string
 export const register = async (req: Request, res: Response ) => {
     
     try {
-        const {firstname, lastname, email, password, role } = req.body
+        const {firstname, lastname, email, phone, password, role } = req.body
 
-        if(!firstname || !lastname || !email || !password || !role) {
+        if(!firstname || !lastname || !email || !phone || !password || !role) {
             return res.status(400).json({ message: "Ooopsss.. All fields are required..!" })
         }
 
@@ -39,6 +39,7 @@ export const register = async (req: Request, res: Response ) => {
             firstname,
             lastname,
             email,
+            phone,
             password: hashedPassword,
             roles: [role],
             accountstatus
@@ -172,9 +173,9 @@ export const adminRegister = async (req: AuthRequest, res: Response) => {
             return res.status(403).json({ message: "Oooppss.. Unauthorized Access..!" })
         }
 
-        const { firstname, lastname, email, password } = req.body
+        const { firstname, lastname, email, phone, password } = req.body
 
-        if(!firstname || !lastname || !email || !password) {
+        if(!firstname || !lastname || !email || !phone || !password) {
             return res.status(400).json({ message: "Oooppss.. All fields are required..!" })
         }
 
@@ -189,6 +190,7 @@ export const adminRegister = async (req: AuthRequest, res: Response) => {
             firstname,
             lastname,
             email,
+            phone,
             password: hashedPassword,
             roles: [Role.ADMIN],
             accountstatus: Status.ACTIVE
@@ -219,7 +221,7 @@ export const staffRegister = async (req: Request, res: Response) => {
             return res.status(403).json({ message: "Oooppss.. Unauthorized Access..!" })
         }
  */
-        const { firstname, lastname, email, password, role, token } = req.body
+        const { firstname, lastname, email, phone, password, role, token } = req.body
 
         if(!firstname || !lastname || !email || !password || !role || !token) {
             return res.status(400).json({ message: "Oooppss.. All fields are required..!" })
@@ -267,6 +269,7 @@ export const staffRegister = async (req: Request, res: Response) => {
             firstname,
             lastname,
             email,
+            phone,
             password: hashedPassword,
             roles: [userRole],
             accountstatus: user_acc_status
