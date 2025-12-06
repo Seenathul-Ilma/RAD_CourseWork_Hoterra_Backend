@@ -39,7 +39,7 @@ app.use(
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/roomtype", roomTypeRouter)
 app.use("/api/v1/invite", inviteRouter)
-app.use("/api/v1/amenity", amenityRouter)
+app.use("/api/v1/service", amenityRouter)
 
 // Global Multer error handler MUST be after all routes
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
