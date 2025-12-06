@@ -1,13 +1,18 @@
 import axios from "axios";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
+import { AuthRequest } from "../middlewares/auth";
 dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY as string;
 
-export const aiGeneratedRoomDescription = async (req: Request, res: Response) => {
+export const aiGeneratedRoomDescription = async (req: AuthRequest, res: Response) => {
   try {
     const { typename, maxadults, maxchild } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized Access..!" });
+    }
 
     if (!typename || maxadults === undefined || maxchild === undefined) {
       return res.status(400).json({ message: "typename, maxadults, and maxchild are required." });
@@ -71,9 +76,15 @@ export const aiGeneratedRoomDescription = async (req: Request, res: Response) =>
 };
 
 
-export const aiGeneratedAmenityDescription = async (req: Request, res: Response) => {
+export const aiGeneratedAmenityDescription = async (req: AuthRequest, res: Response) => {
+
   try {
+    
     const { amenityname } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized Access..!" });
+    }
 
     if (!amenityname) {
       return res.status(400).json({ message: "Amenity cannot be empty..!" });
@@ -130,4 +141,5 @@ export const aiGeneratedAmenityDescription = async (req: Request, res: Response)
     console.error(err);
     res.status(500).json({ message: "AI generation failed" });
   }
+
 };
