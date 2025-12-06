@@ -47,13 +47,37 @@ export const saveAmenity = async (req: AuthRequest, res: Response) => {
         }
 
         // Normalize for checking duplicates (ignore case and spaces)
-        const normalizedName = amenityname.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
+        //const normalizedName = amenityname.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
 
         // Get all amenities and check for duplicates manually
-        const allAmenities = await Amenity.find({});
+        /* const allAmenities = await Amenity.find({});
         const duplicate = allAmenities.find(a => 
             a.amenityname.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "") === normalizedName
-        );
+        ); */
+
+        const normalize = (str: string) => 
+            str.trim().toLowerCase().replace(/[\s-]/g, ''); // remove spaces and dashes            
+
+        const duplicate = await Amenity.findOne({
+            $expr: {
+                $eq: [
+                {
+                    $replaceAll: {
+                    input: {
+                        $replaceAll: {
+                        input: { $toLower: "$amenityname" },  // convert DB value to lowercase
+                        find: "-",
+                        replacement: ""
+                        }
+                    },
+                    find: " ",
+                    replacement: ""
+                    }
+                },
+                normalize(amenityname) // normalized input
+                ]
+            }
+        });
 
         if (duplicate) {
             return res.status(409).json({ message: "Amenity already exists." });
@@ -99,16 +123,33 @@ export const updateAmenity = async (req: AuthRequest, res: Response) => {
                     message: "Amenity name and description are required."
                 });
             }
+
+            const normalize = (str: string) =>
+                str.trim().toLowerCase().replace(/[\s-]/g, "");
     
             if (amenityname !== amenity.amenityname) {
 
-                const normalizedName = amenityname.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
-
-                const allAmenities = await Amenity.find({});
-                const duplicate = allAmenities.find(a => 
-                    a._id.toString() !== id && // exclude the current amenity
-                    a.amenityname.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "") === normalizedName
-                );
+                const duplicate = await Amenity.findOne({
+                    _id: { $ne: id }, // exclude current record
+                    $expr: {
+                        $eq: [
+                            {
+                                $replaceAll: {
+                                    input: {
+                                        $replaceAll: {
+                                            input: { $toLower: "$amenityname" },
+                                            find: "-",
+                                            replacement: ""
+                                        }
+                                    },
+                                    find: " ",
+                                    replacement: ""
+                                }
+                            },
+                            normalize(amenityname)
+                        ]
+                    }
+                });
 
                 if (duplicate) {
                     return res.status(409).json({ message: "Amenity already exists." });

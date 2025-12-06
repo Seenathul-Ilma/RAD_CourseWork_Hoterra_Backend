@@ -50,19 +50,31 @@ export const saveRoomType = async (req: AuthRequest, res: Response) => {
             });
         }
 
-        /* const exists = await RoomType.findOne({ typename: typename.trim() });
-        if (exists) {
-            return res.status(409).json({
-                message: "Room type already exists."
-            });
-        } */
+        const normalize = (str: string) =>
+            str.trim().toLowerCase().replace(/[\s-]/g, "");
 
-        const normalizedName = typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
 
-        const allRoomTypes = await RoomType.find({});
-        const duplicate = allRoomTypes.find(t => 
-            t.typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "") === normalizedName
-        );
+       // Server-side duplicate check
+        const duplicate = await RoomType.findOne({
+            $expr: {
+                $eq: [
+                    {
+                        $replaceAll: {
+                            input: {
+                                $replaceAll: {
+                                    input: { $toLower: "$typename" },
+                                    find: "-",
+                                    replacement: ""
+                                }
+                            },
+                            find: " ",
+                            replacement: ""
+                        }
+                    },
+                    normalize(typename)
+                ]
+            }
+        });
         
         if (duplicate) {
             return res.status(409).json({ message: "Room type already exists." });
@@ -141,22 +153,31 @@ export const updateRoomType = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: "Room type not found." });
         }
 
-        /* if (typename && typename.trim() !== roomType.typename) {
-            const exists = await RoomType.findOne({ typename: typename.trim() });
-            if (exists) {
-                return res.status(409).json({ message: "Room type already exists." });
-            }
-            roomType.typename = typename.trim();
-        } */
+        const normalize = (str: string) =>
+            str.trim().toLowerCase().replace(/[\s-]/g, "");
 
         if (typename && typename.trim() !== roomType.typename) {
-            const normalizedName = typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "");
-
-            const allRoomTypes = await RoomType.find({});
-            const duplicate = allRoomTypes.find(t => 
-                t._id.toString() !== id && // exclude the current room type
-                t.typename.trim().toLowerCase().replace(/\s+/g, "").replace(/-/g, "") === normalizedName
-            );
+            const duplicate = await RoomType.findOne({
+                _id: { $ne: id },  // exclude current
+                $expr: {
+                    $eq: [
+                        {
+                            $replaceAll: {
+                                input: {
+                                    $replaceAll: {
+                                        input: { $toLower: "$typename" },
+                                        find: "-",
+                                        replacement: ""
+                                    }
+                                },
+                                find: " ",
+                                replacement: ""
+                            }
+                        },
+                        normalize(typename)
+                    ]
+                }
+            });
             
             if (duplicate) {
                 return res.status(409).json({ message: "Room type already exists." });
