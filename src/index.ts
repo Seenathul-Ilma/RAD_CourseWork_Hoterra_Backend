@@ -6,6 +6,7 @@ import multer from "multer";
 
 import authRouter from "./routes/auth.routes"
 import roomTypeRouter from "./routes/roomtype.routes"
+import roomRouter from "./routes/room.routes"
 import inviteRouter from "./routes/invite.routes"
 import amenityRouter from "./routes/amenity.routes"
 
@@ -38,6 +39,7 @@ app.use(
 
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/roomtype", roomTypeRouter)
+app.use("/api/v1/room", roomRouter)
 app.use("/api/v1/invite", inviteRouter)
 app.use("/api/v1/service", amenityRouter)
 
