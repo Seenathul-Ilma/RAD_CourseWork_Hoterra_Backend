@@ -8,10 +8,10 @@ const route = Router()
 
 route.get("/", getAllRoom)
 
-route.post("/create", saveRoom)
+route.post("/create", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), saveRoom)
 
-route.put("/update/:id", updateRoom)
+route.put("/update/:id", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), updateRoom)
 
-route.delete("/delete/:id", deleteRoom)
+route.delete("/delete/:id", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), deleteRoom)
 
 export default route
