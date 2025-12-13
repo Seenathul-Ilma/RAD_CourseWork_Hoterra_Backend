@@ -3,7 +3,8 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IRoomType extends Document{
     _id: mongoose.Types.ObjectId,
     typename: string,
-    baseprice: number,
+    //baseprice: number,
+    pricepernight: number,
     description: string,
     roomTypeImageURLs: string[],   // to store the urls of the file in db
     maxadults: number,
@@ -14,7 +15,8 @@ export interface IRoomType extends Document{
 const roomTypeSchema = new Schema<IRoomType>(
     {
         typename: { type: String, required: true, unique: true },
-        baseprice: { type: Number, required: true },
+        //baseprice: { type: Number, required: true },
+        pricepernight: { type: Number, required: true },
         description: { type: String, required: true },
         roomTypeImageURLs: { type: [String], default: [] },
 

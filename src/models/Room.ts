@@ -4,7 +4,7 @@ export enum Availability {
     AVAILABLE = "AVAILABLE",
     BOOKED = "BOOKED",
     OCCUPIED = "OCCUPIED",
-    CLEANING = "CLEANING",
+    //CLEANING = "CLEANING",
     UNDER_MAINTENANCE = "UNDER_MAINTENANCE"
 }
 
@@ -13,7 +13,7 @@ export interface IRoom extends Document{
     roomtype: mongoose.Types.ObjectId,    // to store roomtypes's id
     roomnumber: number,
     floor: number,                 
-    pricepernight: number,
+    //pricepernight: number,
     availability: Availability,
     //roomamenities: mongoose.Types.ObjectId,
     //additionalamenities: string[]
@@ -27,7 +27,7 @@ const roomSchema = new Schema<IRoom>(
         roomtype: { type: Schema.Types.ObjectId, ref: "RoomType", required: true },
         roomnumber: { type: Number, required: true, unique: true },
         floor: { type: Number, required: true },
-        pricepernight: { type: Number, required: true },
+        //pricepernight: { type: Number, required: true },
         availability: { 
             type: String,
             enum: Object.values(Availability),
