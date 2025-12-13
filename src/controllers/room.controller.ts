@@ -4,6 +4,8 @@ import { Availability, Room } from "../models/Room";
 import mongoose from "mongoose";
 import { AuthRequest } from "../middlewares/auth";
 
+export const getRoomById = async (req: Request, res: Response) => {}
+
 export const getAllRoom = async (req: Request, res: Response) => {
 
     try {
@@ -23,8 +25,8 @@ export const getAllRoom = async (req: Request, res: Response) => {
 
         // Sorting options
         let sortOption: any = {};
-        if (sort === "price-asc") sortOption.pricepernight = 1;
-        if (sort === "price-desc") sortOption.pricepernight = -1;
+        //if (sort === "price-asc") sortOption.pricepernight = 1;
+        //if (sort === "price-desc") sortOption.pricepernight = -1;
         if (sort === "roomnumber-asc") sortOption.roomnumber = 1;
         if (sort === "roomnumber-desc") sortOption.roomnumber = -1;
 
@@ -64,10 +66,11 @@ export const saveRoom = async (req: AuthRequest, res: Response) => {
 
         if (!req.user) return res.status(401).json({ message: "Unauthorized access..!" });
 
-        const { roomtype, floor, pricepernight, roomamenities } = req.body;
+        //const { roomtype, floor, pricepernight, roomamenities } = req.body;
+        const { roomtype, floor, roomamenities } = req.body;
 
-        if (!roomtype || !floor || !pricepernight) {
-            return res.status(400).json({ message: "roomtype, floor no, and pricepernight are required." });
+        if (!roomtype || !floor ) {
+            return res.status(400).json({ message: "roomtype, floor no are required." });
         }
 
         if (!mongoose.Types.ObjectId.isValid(roomtype)) {
@@ -110,7 +113,7 @@ export const saveRoom = async (req: AuthRequest, res: Response) => {
             roomtype,
             roomnumber,
             floor,
-            pricepernight,
+            //pricepernight,
             availability: Availability.AVAILABLE,
             roomamenities: parsedRoomAmenities || []
         });
@@ -132,7 +135,8 @@ export const updateRoom = async (req: AuthRequest, res: Response) => {
 
     try {
         const { id } = req.params;
-        const { roomtype, floor, pricepernight, availability, roomamenities } = req.body;
+        //const { roomtype, floor, pricepernight, availability, roomamenities } = req.body;
+        const { roomtype, floor, availability, roomamenities } = req.body;
 
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized Access..!" });
@@ -176,7 +180,7 @@ export const updateRoom = async (req: AuthRequest, res: Response) => {
             room.roomnumber = newRoomNumber;
         }
 
-        if (pricepernight !== undefined) room.pricepernight = pricepernight;
+        //if (pricepernight !== undefined) room.pricepernight = pricepernight;
         if (availability) room.availability = availability;
 
         if (roomamenities !== undefined) {
