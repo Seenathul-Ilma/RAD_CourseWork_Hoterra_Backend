@@ -3,6 +3,8 @@ import { AuthRequest } from "../middlewares/auth";
 import { RoomType } from "../models/RoomType";
 import cloudinary from "../config/cloudinary";
 
+export const getRoomTypeById = async (req: Request, res: Response) => {}
+
 // api/v1/roomtype?page=1&limit=10
 export const getAllRoomType = async (req: Request, res: Response) => {
     // pagination  (page, limit)
@@ -38,15 +40,16 @@ export const getAllRoomType = async (req: Request, res: Response) => {
 export const saveRoomType = async (req: AuthRequest, res: Response) => {
 
     try {
-        const { typename, baseprice, description, maxadults, maxchild } = req.body
+        //const { typename, baseprice, description, maxadults, maxchild } = req.body
+        const { typename, pricepernight, description, maxadults, maxchild } = req.body
         
         if(!req.user){
             return res.status(401).json({ message:"Unauthorized Access..!" })
         }
 
-        if(!typename || !baseprice || !description ) {
+        if(!typename || !pricepernight || !description ) {
             return res.status(400).json({
-                message: "typename, baseprice, and description are required."
+                message: "typename, pricepernight, and description are required."
             });
         }
 
@@ -116,7 +119,7 @@ export const saveRoomType = async (req: AuthRequest, res: Response) => {
 
         const roomType = new RoomType({
             typename,
-            baseprice,
+            pricepernight,
             description,
             roomTypeImageURLs: roomImageURLs,
             maxadults: maxadults ?? 1,
@@ -142,7 +145,8 @@ export const saveRoomType = async (req: AuthRequest, res: Response) => {
 export const updateRoomType = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params
-        const { typename, baseprice, description, maxadults, maxchild } = req.body
+        //const { typename, baseprice, description, maxadults, maxchild } = req.body
+        const { typename, pricepernight, description, maxadults, maxchild } = req.body
     
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized Access..!" });
@@ -186,8 +190,8 @@ export const updateRoomType = async (req: AuthRequest, res: Response) => {
             roomType.typename = typename.trim();
         }
 
-        if (baseprice) {
-            roomType.baseprice = baseprice
+        if (pricepernight) {
+            roomType.pricepernight = pricepernight
         }
 
         if (description) {
