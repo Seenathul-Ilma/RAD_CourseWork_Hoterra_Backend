@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllRoomType, saveRoomType, updateRoomType, deleteRoomType } from "../controllers/roomtype.controller";
+import { getAllRoomType, saveRoomType, updateRoomType, deleteRoomType, getRoomTypeById } from "../controllers/roomtype.controller";
 import { authenticate } from "../middlewares/auth";
 import { authorization } from "../middlewares/roles";
 import { upload } from "../middlewares/upload";
@@ -9,6 +9,8 @@ import { aiGeneratedRoomDescription } from "../controllers/ai.controller";
 const route = Router()
 
 route.get("/", getAllRoomType)
+
+route.get("/:id", getRoomTypeById)
 
 // image urls in an array & maxcount 5
 route.post("/create", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), upload.array("image", 5), saveRoomType)
