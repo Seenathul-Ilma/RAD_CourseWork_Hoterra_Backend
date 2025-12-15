@@ -5,6 +5,7 @@ import { AuthRequest } from "../middlewares/auth";
 dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY as string;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY as string;
 
 export const aiGeneratedRoomDescription = async (req: AuthRequest, res: Response) => {
   try {
@@ -15,65 +16,75 @@ export const aiGeneratedRoomDescription = async (req: AuthRequest, res: Response
     }
 
     if (!typename || maxadults === undefined || maxchild === undefined) {
-      return res.status(400).json({ message: "typename, maxadults, and maxchild are required." });
+      return res.status(400).json({
+        message: "typename, maxadults, and maxchild are required."
+      });
     }
 
     const maxpersons = Number(maxadults) + Number(maxchild);
 
-    // Construct the prompt for Gemini
     const prompt = `
-        Generate a short, clear, and professional hotel room description using the following data:
+Generate a short, clear, and professional hotel room description.
 
-        Room Type: ${typename}
-        Max Adults: ${maxadults}
-        Max Children: ${maxchild}
-        Total Capacity: ${maxpersons}
+Details:
+- Max Adults: ${maxadults}
+- Max Children: ${maxchild}
+- Total Capacity: ${maxpersons}
 
-        Guidelines:
-        - Keep the tone professional, simple, and guest-friendly.
-        - Explain who the room is suitable for (solo travelers, couples, families, groups, etc.) based on capacity.
-        - Mention comfort and essential amenities in general terms (no specific features).
-        - Length should be 15–20 words max.
-        - Do NOT repeat the room type name inside the description.
-        - No quotes, no bullet points, no lists.
-    `;
+Rules:
+- 15–20 words only
+- Professional and guest-friendly
+- Describe suitability (solo, couple, family, etc.)
+- Mention comfort in general terms
+- Do NOT repeat the room type name
+- No quotes, no bullet points, no options
+`;
 
-    // Call Gemini API
     const aiResponse = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
+      "https://openrouter.ai/api/v1/chat/completions",
       {
-        contents: [
-            {
-                parts: [{ text: prompt }]
-            }
+        model: "google/gemma-3-27b-it:free", 
+        messages: [
+          {
+            role: "system",
+            content: "You write hotel room descriptions."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
         ],
-        generationConfig: {
-          maxOutputTokens: 150
-        }
+        max_tokens: 60,
+        temperature: 0.6
       },
       {
         headers: {
-          "Content-Type": "application/json",
-          "X-goog-api-key": GEMINI_API_KEY
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+          //"HTTP-Referer": "http://localhost:3000", // REQUIRED by OpenRouter
+          //"X-Title": "Hoterra Admin Panel"
         }
       }
     );
 
-    // Extract generated text
-    const generatedContent =
-      aiResponse.data?.candidates?.[0]?.content?.[0]?.text ||
-      aiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No description generated";
+    const generatedText =
+      aiResponse.data?.choices?.[0]?.message?.content?.trim();
 
-    res.status(200).json({
-      description: generatedContent.trim()
+    if (!generatedText) {
+      return res.status(500).json({ message: "No description generated" });
+    }
+
+    res.status(200).json({ description: generatedText });
+
+  } catch (error: any) {
+    console.error("AI Error:", error?.response?.data || error.message);
+
+    res.status(500).json({
+      message: "AI generation failed"
     });
-
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ message: "AI generation failed" });
   }
 };
+
 
 
 export const aiGeneratedAmenityDescription = async (req: AuthRequest, res: Response) => {
