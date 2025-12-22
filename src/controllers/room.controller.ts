@@ -40,13 +40,13 @@ export const getAllRoom = async (req: Request, res: Response) => {
             .sort(sortOption)
             .skip(skip)
             .limit(limit)
-            .populate("roomtype", "roomtype") // fetch room type name only
+            .populate("roomtype", "typename") // fetch room type name only
             //.populate("roomamenities") // if someday you make amenities as IDs
         
         const total = await Room.countDocuments(query);
 
         res.status(200).json({
-            message: "Rooms fetched successfully",
+            message: "Rooms fetched successfully..",
             data: rooms,
             totalPages: Math.ceil(total / limit),
             totalCount: total,
