@@ -9,7 +9,8 @@ export interface IRoomType extends Document{
     roomTypeImageURLs: string[],   // to store the urls of the file in db
     maxadults: number,
     maxchild: number,
-    maxpersons: number
+    maxpersons: number,
+    isActive: boolean
 }
 
 const roomTypeSchema = new Schema<IRoomType>(
@@ -30,7 +31,8 @@ const roomTypeSchema = new Schema<IRoomType>(
             default: function () {
                 return this.maxadults + this.maxchild;
             }
-        }
+        },
+        isActive : { type: Boolean, required: true, default: true }
     },
     {
         timestamps: true
