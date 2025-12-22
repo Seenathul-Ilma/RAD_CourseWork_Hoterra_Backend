@@ -1,6 +1,7 @@
 import { Request, Response } from "express"
 import { AuthRequest } from "../middlewares/auth"
 import { Amenity } from "../models/Amenity"
+import { getAmenityCategory, getAmenityIcon } from "../utils/amenity.mapper"
 
 
 export const getAllAmenity = async (req: Request, res: Response) => {
@@ -83,9 +84,14 @@ export const saveAmenity = async (req: AuthRequest, res: Response) => {
             return res.status(409).json({ message: "Amenity already exists." });
         }
 
+        const category = getAmenityCategory(amenityname);
+        const iconName = getAmenityIcon(amenityname);
+
         const amenity = new Amenity({
             amenityname,
-            description
+            description,
+            category,
+            iconName
         });
 
         await amenity.save();
