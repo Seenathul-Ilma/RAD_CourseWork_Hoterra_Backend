@@ -110,7 +110,7 @@ export const aiGeneratedAmenityDescription = async (req: AuthRequest, res: Respo
 
     // Call Gemini API
     const aiResponse = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
       {
         contents: [
             {
