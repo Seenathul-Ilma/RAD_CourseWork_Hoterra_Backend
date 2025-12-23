@@ -126,17 +126,26 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
             if (!guest_email && !guest_phone) {
                 return res.status(400).json({ message: "Walk-in guests must provide email or phone." });
             }
+        } else {
+            return res.status(403).json({ message: "You don't have permission to create bookings" });
         }
 
         // Validate check-in/out dates
-        const checkInDate = new Date(check_in);
-        const checkOutDate = new Date(check_out);
+        const checkIn = new Date(check_in);
+        const checkOut = new Date(check_out);
 
-        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+
+        if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
             return res.status(400).json({ message: "Invalid check-in or check-out date." });
         }
 
-        if (checkOutDate <= checkInDate) {
+        if (checkIn.getTime() < Date.now() || checkOut.getTime() < Date.now()) {
+            return res.status(400).json({
+                message: "Check-in date cannot be in the past"
+            });
+        }
+
+        if (checkOut <= checkIn) {
             return res.status(400).json({ message: "Check-out date must be after check-in date." });
         }
 
@@ -144,8 +153,8 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         const overlappingBookings = await Booking.find({
             room_id,
             bookingstatus: { $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
-            check_in: { $lt: checkOutDate },
-            check_out: { $gt: checkInDate } 
+            check_in: { $lt: checkOut },
+            check_out: { $gt: checkIn } 
         });
 
         if (overlappingBookings.length > 0) {
@@ -157,7 +166,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         if (!roomType) return res.status(404).json({ message: "Room type not found." });
 
         // Calculate total price: number of nights * price per night
-        const diffTime = Math.abs(checkOutDate.getTime() - checkInDate.getTime());
+        const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
         const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const total_price = nights * roomType.pricepernight;
 
@@ -167,6 +176,12 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
             bookingstatus = BookingStatus.CONFIRMED; // staff/admin booking
         } */
 
+        console.log("roomid:- ", room_id)
+        console.log("check_in:- ", check_in)
+        console.log("check_out:- ", check_out)
+        console.log("checkIn:- ", checkIn)
+        console.log("checkOut:- ", checkOut)
+    
         // Create booking
         const booking = new Booking({
             guest_id: finalGuestId ?? null,
@@ -174,8 +189,8 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
             guest_email: finalGuestEmail,
             guest_phone: finalGuestPhone,
             room_id,
-            check_in: checkInDate,
-            check_out: checkOutDate,
+            check_in: checkIn,
+            check_out: checkOut,
             bookingstatus: BookingStatus.PENDING,
             total_price
         });
@@ -234,7 +249,7 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
 
         if (!validTransitions[booking.bookingstatus].includes(status)) {
             return res.status(400).json({
-                message: `Cannot change status from ${booking.bookingstatus} to ${status}`
+                message: `Cannot transition from ${booking.bookingstatus} to ${status}`
             });
         }
 
