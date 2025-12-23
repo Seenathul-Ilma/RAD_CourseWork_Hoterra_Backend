@@ -60,6 +60,71 @@ export const getAllRoom = async (req: Request, res: Response) => {
 
 }
 
+export const getAllRoomByRoomtype = async (req: Request, res: Response) => {
+
+    try {
+        // Query params: /rooms?floor=3&availability=AVAILABLE&type=675a9...&page=1&limit=10
+        const { roomtype_id } = req.params
+        const { floor, availability, sort } = req.query;
+
+        if (!mongoose.Types.ObjectId.isValid(roomtype_id)) {
+            return res.status(400).json({ message: "Invalid room type ID" });
+        }
+
+        const isExist = await RoomType.findById(roomtype_id);
+        
+        if (!isExist) {
+            return res.status(409).json({ message: "Room type not found." });
+        }
+
+        const query: any = {};
+
+        // Filter - floor
+        if (floor) query.floor = Number(floor);
+
+        // Filter - availability
+        if (availability) query.availability = availability;
+
+        // Filter - room type
+        if (roomtype_id) query.roomtype = roomtype_id
+
+        // Sorting options
+        let sortOption: any = {};
+        //if (sort === "price-asc") sortOption.pricepernight = 1;
+        //if (sort === "price-desc") sortOption.pricepernight = -1;
+        if (sort === "roomnumber-asc") sortOption.roomnumber = 1;
+        if (sort === "roomnumber-desc") sortOption.roomnumber = -1;
+
+        // Pagination numbers
+        const page = parseInt(req.query.page as string) || 1
+        const limit = parseInt(req.query.limit as string) || 10
+
+        const skip = (page - 1) * limit
+
+        const rooms = await Room.find(query)
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limit)
+            //.populate("roomtype", "typename") // fetch room type name only
+            //.populate("roomamenities") // if someday you make amenities as IDs
+        
+        const total = await Room.countDocuments(query);
+
+        res.status(200).json({
+            message: "Rooms fetched successfully..",
+            data: rooms,
+            totalPages: Math.ceil(total / limit),
+            totalCount: total,
+            page
+        });
+
+    } catch (err: any) {
+        console.error(err);
+        res.status(500).json({ message: err?.message });
+    }
+
+}    
+
 export const saveRoom = async (req: AuthRequest, res: Response) => {
 
     try {
