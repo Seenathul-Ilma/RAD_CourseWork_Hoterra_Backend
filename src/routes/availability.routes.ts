@@ -2,11 +2,11 @@ import { Router } from "express";
 import { authenticate } from "../middlewares/auth";
 import { authorization } from "../middlewares/roles";
 import { Role } from "../models/User";
-import { deleteRoom, getAllRoom, getRoomById, saveRoom, updateRoom } from "../controllers/room.controller";
-import { getAllAvailableRoomTypesByDate } from "../controllers/availability.controller";
+import { getAllAvailableRoomsByRoomType, getAllAvailablityByDate } from "../controllers/availability.controller";
 
 const route = Router()
 
-route.get("/", getAllAvailableRoomTypesByDate)
+route.get("/", getAllAvailablityByDate)
+route.get("/roomtype/:roomtype_id", getAllAvailableRoomsByRoomType)
 
 export default route
