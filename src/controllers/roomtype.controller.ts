@@ -211,6 +211,12 @@ export const saveRoomType = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    if(roomImageURLs.length < 1) {
+      return res.status(400).json({
+        message: "Please upload atleast 1 image of the room.",
+      });
+    }
+
     const maxpersons = Number(maxadults ?? 1) + Number(maxchild ?? 0);
     const roompricepernight = Number(pricepernight);
 
@@ -355,6 +361,12 @@ export const updateRoomType = async (req: AuthRequest, res: Response) => {
     }
 
     roomType.roomTypeImageURLs = updatedImageURLs;
+
+    if(roomType.roomTypeImageURLs.length < 1) {
+      return res.status(400).json({
+        message: "Required atleast 1 image for a room.",
+      });
+    }
 
     await roomType.save();
 
