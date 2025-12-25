@@ -63,7 +63,6 @@ export const getAllRoom = async (req: Request, res: Response) => {
 export const getAllRoomByRoomtype = async (req: Request, res: Response) => {
 
     try {
-        // Query params: /rooms?floor=3&availability=AVAILABLE&type=675a9...&page=1&limit=10
         const { roomtype_id } = req.params
         const { floor, availability, sort } = req.query;
 
