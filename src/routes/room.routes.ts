@@ -3,12 +3,14 @@ import { authenticate } from "../middlewares/auth";
 import { authorization } from "../middlewares/roles";
 import { Role } from "../models/User";
 import { deleteRoom, getAllRoom, getAllRoomByRoomtype, getRoomById, saveRoom, updateRoom } from "../controllers/room.controller";
+import { upload } from "../middlewares/upload";
 
 const route = Router()
 
 route.get("/", getAllRoom)
 
-route.get("/roomtype/:roomtype_id", getAllRoomByRoomtype)
+//route.get("/roomtype/:roomtype_id", getAllRoomByRoomtype)
+route.get("/roomtype/:roomtypeid", getAllRoomByRoomtype)
 
 route.get("/:id", getRoomById)
 
