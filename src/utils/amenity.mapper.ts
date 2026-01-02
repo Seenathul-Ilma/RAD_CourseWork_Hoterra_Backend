@@ -4,7 +4,7 @@
 // Category grouping
 export const amenitiesByCategory: Record<string, string[]> = {
   "Technology & Connectivity": [
-    "WiFi", "High-Speed Internet", "Smart TV", "Cable TV", "Bluetooth Speaker",
+    "WiFi", "High-Speed Internet", "TV", "Smart TV", "Cable TV", "Bluetooth Speaker",
     "USB Charging Ports", "Laptop-Friendly Workspace", "Phone", "Fax Machine"
   ],
   "Climate Control": [
@@ -16,7 +16,7 @@ export const amenitiesByCategory: Record<string, string[]> = {
     "Cookware", "Wine Glasses", "Blender"
   ],
   "Bathroom & Personal Care": [
-    "Private Bathroom", "Shared Bathroom", "Hot Water", "Shower", "Bathtub",
+    "Private Bathroom", "Shared Bathroom", "Hot Water", "Jacuzzi", "Shower", "Bathtub",
     "Hair Dryer", "Towels", "Toiletries", "Bathrobe", "Slippers", "Bidet"
   ],
   "Bedroom & Comfort": [
@@ -82,6 +82,7 @@ export const amenityIconMap: Record<string, string> = {
   // Technology & Connectivity
   "WiFi": "Wifi",
   "High-Speed Internet": "Globe",
+  "TV": "Tv",
   "Smart TV": "Tv",
   "Cable TV": "Tv2",
   "Bluetooth Speaker": "Speaker",
@@ -118,6 +119,7 @@ export const amenityIconMap: Record<string, string> = {
   "Hot Water": "Droplets",
   "Shower": "ShowerHead",
   "Bathtub": "Bath",
+  "Jacuzzi": "Bath",
   "Hair Dryer": "Wind",
   "Towels": "Shirt",
   "Toiletries": "Sparkles",
