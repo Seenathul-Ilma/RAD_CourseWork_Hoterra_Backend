@@ -212,6 +212,105 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 }
 
 export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized access!" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid booking ID." });
+    }
+
+    if (!Object.values(BookingStatus).includes(status)) {
+      return res.status(400).json({ message: "Invalid booking status." });
+    }
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    const room = await Room.findById(booking.room_id);
+    if (!room) {
+      return res.status(404).json({ message: "Associated room not found." });
+    }
+
+    /* ---------------- VALID STATUS TRANSITIONS ---------------- */
+    const validTransitions: Record<BookingStatus, BookingStatus[]> = {
+      PENDING: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
+      CONFIRMED: [BookingStatus.CHECKED_IN, BookingStatus.CANCELLED],
+      CHECKED_IN: [BookingStatus.CHECKED_OUT],
+      CHECKED_OUT: [],
+      CANCELLED: []
+    };
+
+    if (!validTransitions[booking.bookingstatus].includes(status)) {
+      return res.status(400).json({
+        message: `Cannot change status from ${booking.bookingstatus} to ${status}`
+      });
+    }
+
+    /* ---------------- UPDATE BOOKING STATUS ---------------- */
+    booking.bookingstatus = status;
+    await booking.save();
+
+    /* ---------------- ROOM AVAILABILITY LOGIC ---------------- */
+    const today = new Date();
+    const startDate = new Date(booking.check_in);
+    const endDate = new Date(booking.check_out);
+
+    if (status === BookingStatus.CHECKED_IN) {
+      // Guest is physically inside the room
+      room.availability = Availability.OCCUPIED;
+    }
+
+    else if (status === BookingStatus.CHECKED_OUT || status === BookingStatus.CANCELLED) {
+      // Check if another active booking overlaps today
+      const overlappingBooking = await Booking.findOne({
+        room_id: room._id,
+        bookingstatus: {
+          $in: [
+            BookingStatus.CONFIRMED,
+            BookingStatus.CHECKED_IN
+          ]
+        },
+        checkin_date: { $lte: today },
+        checkout_date: { $gt: today }
+      });
+
+      room.availability = overlappingBooking
+        ? Availability.BOOKED
+        : Availability.AVAILABLE;
+    }
+
+    else if (
+      status === BookingStatus.CONFIRMED &&
+      today >= startDate &&
+      today < endDate
+    ) {
+      // Booking is confirmed AND date range is active
+      room.availability = Availability.BOOKED;
+    }
+
+    // Otherwise - we no need to touch room availability
+    await room.save();
+
+    return res.status(200).json({
+      message: "Booking status updated successfully",
+      data: booking
+    });
+
+  } catch (err: any) {
+    console.error("Update Booking Status Error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
+export const updateBookingStatusOld = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
         const { status } = req.body;  // updating status
@@ -280,7 +379,7 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
             room.availability =
                 activeBookings.length > 0
                     ? Availability.BOOKED
-                    : Availability.AVAILABLE;
+                    : Availability.OCCUPIED;
         }
 
         await room.save();
