@@ -80,7 +80,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     try {
 
         //const { guest_id, guest_name, guest_email, guest_phone, room_id, check_in, check_out } = req.body;
-        const { guest_name, guest_email, guest_phone, room_id, check_in, check_out } = req.body;
+        const { guestname, guestemail, guestphone, roomid, checkin, checkout } = req.body;
 
         if(!req.user) {
             return res.status(401).json({ message: "Oooppss.. Unauthorized Access..!" })
@@ -92,11 +92,11 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         }
 
         // Validate room
-        if (!room_id || !mongoose.Types.ObjectId.isValid(room_id)) {
+        if (!roomid || !mongoose.Types.ObjectId.isValid(roomid)) {
             return res.status(400).json({ message: "Invalid room ID." });
         }
 
-        const room = await Room.findById(room_id);
+        const room = await Room.findById(roomid);
         if (!room) return res.status(404).json({ message: "Room not found." });
 
         // 1. Booking by a registered guest (guest id)
@@ -107,9 +107,9 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         //  - Walk-in Guest - guest_name & email or phone required
 
         let finalGuestId: mongoose.Types.ObjectId | undefined = undefined;
-        let finalGuestName = guest_name || null;
-        let finalGuestEmail = guest_email || null;
-        let finalGuestPhone = guest_phone || null;
+        let finalGuestName = guestname || null;
+        let finalGuestEmail = guestemail || null;
+        let finalGuestPhone = guestphone || null;
 
         if (user?.roles.includes(Role.GUEST)) {
             // Registered GUEST cannot book for others - only for themselves
@@ -120,10 +120,10 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 
         } else if (user.roles.includes(Role.ADMIN) || user.roles.includes(Role.RECEPTIONIST)) {
             // ADMIN / RECEPTIONIST - can book for walk-ins
-            if (!guest_name) {
+            if (!guestname) {
                 return res.status(400).json({ message: "Walk-in guest name is required." });
             }
-            if (!guest_email && !guest_phone) {
+            if (!guestemail && !guestphone) {
                 return res.status(400).json({ message: "Walk-in guests must provide email or phone." });
             }
         } else {
@@ -131,27 +131,40 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         }
 
         // Validate check-in/out dates
-        const checkIn = new Date(check_in);
-        const checkOut = new Date(check_out);
+        const checkInDate = new Date(checkin);
+        const checkOutDate = new Date(checkout);
 
 
-        if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
             return res.status(400).json({ message: "Invalid check-in or check-out date." });
         }
 
-        if (checkIn.getTime() < Date.now() || checkOut.getTime() < Date.now()) {
-            return res.status(400).json({
-                message: "Check-in date cannot be in the past"
-            });
-        }
-
-        if (checkOut <= checkIn) {
+        if (checkOutDate <= checkInDate) {
             return res.status(400).json({ message: "Check-out date must be after check-in date." });
         }
 
+        /* if (checkIn.getTime() < Date.now() || checkOut.getTime() < Date.now()) {
+            return res.status(400).json({
+                message: "Check-in date cannot be in the past"
+            });
+        } */
+
+            const normalizeDate = (date: Date) =>
+      new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    const today = normalizeDate(new Date());
+    const checkIn = normalizeDate(checkInDate);
+    const checkOut = normalizeDate(checkOutDate);
+
+    if (checkIn < today || checkOut < today) {
+      return res.status(400).json({
+        message: "Check-in or check-out date cannot be in the past!",
+      });
+    }
+
         // Check room availability for the given period
         const overlappingBookings = await Booking.find({
-            room_id,
+            roomid,
             bookingstatus: { $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
             check_in: { $lt: checkOut },
             check_out: { $gt: checkIn } 
@@ -176,11 +189,13 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
             bookingstatus = BookingStatus.CONFIRMED; // staff/admin booking
         } */
 
-        console.log("roomid:- ", room_id)
-        console.log("check_in:- ", check_in)
-        console.log("check_out:- ", check_out)
+        console.log("roomid:- ", roomid)
+        console.log("check_in:- ", checkin)
+        console.log("check_out:- ", checkout)
         console.log("checkIn:- ", checkIn)
         console.log("checkOut:- ", checkOut)
+        console.log("checkInDate:- ", checkInDate)
+        console.log("checkOutDate:- ", checkOutDate)
     
         // Create booking
         const booking = new Booking({
@@ -188,9 +203,9 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
             guest_name: finalGuestName,
             guest_email: finalGuestEmail,
             guest_phone: finalGuestPhone,
-            room_id,
-            check_in: checkIn,
-            check_out: checkOut,
+            room_id: roomid,
+            check_in: checkInDate,
+            check_out: checkOutDate,
             bookingstatus: BookingStatus.PENDING,
             total_price
         });
