@@ -192,10 +192,10 @@ export const getAllAvailablityByDate = async (req: Request, res: Response) => {
 export const getAllAvailablityByDate = async (req: Request, res: Response) => {
   try {
     //const { check_in, check_out } = req.body;
-    const { check_in, check_out, sort } = req.query;
+    const { checkin, checkout, sort } = req.query;
 
     // Validate inputs
-    if (!check_in || !check_out) {
+    if (!checkin || !checkout) {
       return res
         .status(400)
         .json({ message: "Check-in and Check-out required" });
@@ -203,39 +203,49 @@ export const getAllAvailablityByDate = async (req: Request, res: Response) => {
 
     //const checkInDate = new Date(check_in);
     //const checkOutDate = new Date(check_out);
-    const checkIn = new Date(check_in as string);
-    const checkOut = new Date(check_out as string);
+    const checkInDate = new Date(checkin as string);
+    const checkOutDate = new Date(checkout as string);
 
-    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
-    if (checkIn.getTime() < Date.now() || checkOut.getTime() < Date.now()) {
-      return res.status(400).json({
-        message: "Check-in date cannot be in the past",
-      });
-    }
-
-    if (checkOut <= checkIn) {
+    
+    if (checkOutDate <= checkInDate) {
       return res
         .status(400)
         .json({ message: "Check-out date must be after check-in date" });
     }
 
+    /* if (checkIn.getTime() < Date.now() || checkOut.getTime() < Date.now()) {
+      return res.status(400).json({
+        message: "Check-in date cannot be in the past",
+      });
+    } */
+
+    const normalizeDate = (date: Date) =>
+      new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    const today = normalizeDate(new Date());
+    const checkIn = normalizeDate(checkInDate);
+    const checkOut = normalizeDate(checkOutDate);
+
+    if (checkIn < today || checkOut < today) {
+      return res.status(400).json({
+        message: "Check-in or check-out date cannot be in the past!",
+      });
+    }
+
     // 1. Get booked room IDs in this date range
     const bookedRoomIds = await Booking.find({
       bookingstatus: { $in: ["PENDING", "CONFIRMED", "CHECKED_IN"] },
-      $and: [{ check_in: { $lt: checkOut } }, { check_out: { $gt: checkIn } }],
+      $and: [{ check_in: { $lt: checkOutDate } }, { check_out: { $gt: checkInDate } }],
     }).distinct("room_id");
-
-    console.log("Booked room IDs:", bookedRoomIds);
 
     // 2. Get available rooms (not in booked list)
     const availableRooms = await Room.find({
       _id: { $nin: bookedRoomIds },
     }).select("roomtype floor roomnumber roomamenities");
-
-    console.log("Available rooms:", availableRooms);
 
     const availableRoomsCounts = availableRooms.length;
     const bookedRoomsCounts = bookedRoomIds.length;
@@ -247,8 +257,6 @@ export const getAllAvailablityByDate = async (req: Request, res: Response) => {
       const roomTypeId = room.roomtype.toString();
       roomTypeCountMap[roomTypeId] = (roomTypeCountMap[roomTypeId] || 0) + 1;
     });
-
-    console.log("Room type count map:", roomTypeCountMap);
 
     // 4. Get available room type IDs
     const availableRoomTypeIds = Object.keys(roomTypeCountMap);
@@ -284,8 +292,8 @@ export const getAllAvailablityByDate = async (req: Request, res: Response) => {
       message: "Available rooms fetched successfully",
       data: roomTypesWithCounts,
       summary: {
-        checkIn: checkIn,
-        checkOut: checkOut,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
         //allAvailableRooms: availableRooms,
         totalAvailableRooms: availableRoomsCounts,
         totalBookedRooms: bookedRoomsCounts,
