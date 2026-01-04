@@ -29,9 +29,6 @@ const DEFAULT_ADMIN_PHONE = process.env.DEFAULT_ADMIN_PHONE as string
 // Create an Express app instance to handle routes, middleware, and server configurations
 const app = express();
 
-// Register built-in middleware to parse incoming JSON request bodies
-app.use(express.json());
-
 // Enable CORS origin for frontend (including preflight OPTIONS requests)
 app.use(
   cors({
@@ -43,6 +40,11 @@ app.use(
 );
 
 app.options("*", cors());
+
+app.use(cors());
+
+// Register built-in middleware to parse incoming JSON request bodies
+app.use(express.json());
 
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/roomtype", roomTypeRouter)
