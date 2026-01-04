@@ -6,13 +6,14 @@ import { createBooking, getAllBookings, getBookingById, updateBookingStatus } fr
 
 const route = Router()
 
-route.get("/", getAllBookings)
+route.get("/", authenticate, getAllBookings)
 
 route.get("/:id", getBookingById)
 
 route.post("/create", authenticate, createBooking)
 
-route.put("/update/status/:id", authenticate, updateBookingStatus)
+//route.put("/update/status/:id", authenticate, updateBookingStatus)
+route.patch("/update/status/:id", authenticate, updateBookingStatus)
 
 //route.delete("/delete/:id", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), deleteBooking)
 

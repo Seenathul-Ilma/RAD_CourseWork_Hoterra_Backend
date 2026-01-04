@@ -6,8 +6,10 @@ import { RoomType } from "../models/RoomType";
 import { AuthRequest } from "../middlewares/auth";
 import { Role, User } from "../models/User";
 
-export const getAllBookings = async (req: AuthRequest, res: Response) => {
+/* export const getAllBookings = async (req: AuthRequest, res: Response) => {
     try {
+
+        console.log(req.user)
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized Access" });
         }
@@ -26,12 +28,19 @@ export const getAllBookings = async (req: AuthRequest, res: Response) => {
                 .populate("room_id")
                 .sort({ check_in: 1 });
         } else if (user.roles.includes(Role.ADMIN) || user.roles.includes(Role.RECEPTIONIST)) {
-            // Staff → see all bookings
+            // Staff see all bookings
             bookings = await Booking.find()
                 //.populate("room_id", "roomnumber floor availability roomtype")
-                .populate("room_id")
-                //.populate("guest_id", "firstname lastname email phone")
-                .populate("guest_id")
+                //.populate("room_id")
+                .populate({
+                    path: "room_id",
+                    populate: {
+                        path: "roomtype",
+                        select: "typename pricepernight"
+                    }
+                })
+                .populate("guest_id", "firstname lastname email phone")
+                //.populate("guest_id")
                 .sort({ check_in: 1 });
         }
 
@@ -43,113 +52,308 @@ export const getAllBookings = async (req: AuthRequest, res: Response) => {
     } catch (err: any) {
         res.status(500).json({ message: err.message });
     }
+}; */
+
+export const getAllBookings = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized Access" });
+    }
+
+    const user = await User.findById(req.user.sub);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Pagination params
+    const page = Math.max(Number(req.query.page) || 1);
+    const limit = Math.min(Number(req.query.limit) || 10);
+    const skip = (page - 1) * limit;
+
+    let filter: any = {};
+    let populateOptions: any[] = [];
+
+    // Guest: only their bookings
+    if (user.roles.includes(Role.GUEST)) {
+      filter.guest_id = user._id;
+
+      populateOptions = [
+        {
+          path: "room_id",
+          populate: {
+            path: "roomtype",
+            select: "typename pricepernight",
+          },
+        },
+      ];
+    }
+
+    // Staff: all bookings
+    if (
+      user.roles.includes(Role.ADMIN) ||
+      user.roles.includes(Role.RECEPTIONIST)
+    ) {
+      populateOptions = [
+        {
+          path: "room_id",
+          populate: {
+            path: "roomtype",
+            select: "typename pricepernight",
+          },
+        },
+        {
+          path: "guest_id",
+          select: "firstname lastname email phone",
+        },
+      ];
+    }
+
+    // Total count (important for pagination)
+    const total = await Booking.countDocuments(filter);
+
+    const bookings = await Booking.find(filter)
+      .populate(populateOptions)
+      .sort({ check_in: 1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      message: "Bookings fetched successfully",
+      data: bookings,
+      totalPages: Math.ceil(total / limit),
+      totalCount: total,
+      page,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 export const getBookingById = async (req: AuthRequest, res: Response) => {
-    try {
+  try {
+    const { id } = req.params;
 
-        const { id } = req.params;
-
-        if(!req.user) {
-            return res.status(401).json({ message: "Oooppss.. Unauthorized Access..!" })
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ message: "Invalid booking ID." });
-        }
-
-        const booking = await Booking.findById(id)
-            .populate("room_id", "roomnumber floor availability roomtype");
-
-        if (!booking) {
-            return res.status(404).json({ message: "Booking not found." });
-        }
-
-        res.json({
-            message: "Booking fetched successfully",
-            data: booking
-        });
-
-    } catch (err: any) {
-        res.status(500).json({ message: err.message });
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ message: "Oooppss.. Unauthorized Access..!" });
     }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid booking ID." });
+    }
+
+    const booking = await Booking.findById(id).populate(
+      "room_id",
+      "roomnumber floor availability roomtype"
+    );
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    res.json({
+      message: "Booking fetched successfully",
+      data: booking,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 export const createBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    const { guestname, guestemail, guestphone, roomid, checkin, checkout } =
+      req.body;
 
-    try {
+    if (!req.user)
+      return res.status(401).json({ message: "Unauthorized Access" });
 
-        //const { guest_id, guest_name, guest_email, guest_phone, room_id, check_in, check_out } = req.body;
-        const { guestname, guestemail, guestphone, roomid, checkin, checkout } = req.body;
+    const user = await User.findById(req.user.sub);
+    if (!user) return res.status(404).json({ message: "User not found." });
 
-        if(!req.user) {
-            return res.status(401).json({ message: "Oooppss.. Unauthorized Access..!" })
-        }
+    if (!roomid || !mongoose.Types.ObjectId.isValid(roomid))
+      return res.status(400).json({ message: "Invalid room ID." });
 
-        const user = await User.findById(req.user.sub);
-        if (!user) {
-            return res.status(404).json({ message: "User not found." });
-        }
+    const room = await Room.findById(roomid);
+    if (!room) return res.status(404).json({ message: "Room not found." });
 
-        // Validate room
-        if (!roomid || !mongoose.Types.ObjectId.isValid(roomid)) {
-            return res.status(400).json({ message: "Invalid room ID." });
-        }
+    let finalGuestId: mongoose.Types.ObjectId | undefined = undefined;
+    let finalGuestName = guestname || null;
+    let finalGuestEmail = guestemail || null;
+    let finalGuestPhone = guestphone || null;
 
-        const room = await Room.findById(roomid);
-        if (!room) return res.status(404).json({ message: "Room not found." });
+    if (user.roles.includes(Role.GUEST)) {
+      finalGuestId = user._id;
+      finalGuestName = `${user.firstname} ${user.lastname}`;
+      finalGuestEmail = user.email || "";
+      finalGuestPhone = user.phone || "";
+    } else if (
+      user.roles.includes(Role.ADMIN) ||
+      user.roles.includes(Role.RECEPTIONIST)
+    ) {
+      if (!guestname)
+        return res
+          .status(400)
+          .json({ message: "Walk-in guest name is required." });
+      if (!guestemail && !guestphone)
+        return res
+          .status(400)
+          .json({ message: "Walk-in guests must provide email or phone." });
+    } else
+      return res
+        .status(403)
+        .json({ message: "You don't have permission to create bookings" });
 
-        // 1. Booking by a registered guest (guest id)
-        // 2. Admin/receptionist can create a booking for walk-ins.
+    const normalizeToUTC = (date: Date) =>
+      new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
 
-        // So, Guest can be:
-        //  - Registered Guest - guest_id required
-        //  - Walk-in Guest - guest_name & email or phone required
+    // Convert incoming dates to UTC start-of-day
+    const checkInDate = normalizeToUTC(new Date(checkin));
+    const checkOutDate = normalizeToUTC(new Date(checkout));
 
-        let finalGuestId: mongoose.Types.ObjectId | undefined = undefined;
-        let finalGuestName = guestname || null;
-        let finalGuestEmail = guestemail || null;
-        let finalGuestPhone = guestphone || null;
+    if (checkOutDate <= checkInDate)
+      return res
+        .status(400)
+        .json({ message: "Check-out must be after check-in." });
 
-        if (user?.roles.includes(Role.GUEST)) {
-            // Registered GUEST cannot book for others - only for themselves
-            finalGuestId = user?._id;
-            finalGuestName = `${user?.firstname} ${user?.lastname}`;
-            finalGuestEmail = user?.email || "";
-            finalGuestPhone = user?.phone || "";
+    const today = normalizeToUTC(new Date());
+    if (checkInDate < today || checkOutDate < today)
+      return res
+        .status(400)
+        .json({ message: "Check-in or check-out cannot be in the past." });
 
-        } else if (user.roles.includes(Role.ADMIN) || user.roles.includes(Role.RECEPTIONIST)) {
-            // ADMIN / RECEPTIONIST - can book for walk-ins
-            if (!guestname) {
-                return res.status(400).json({ message: "Walk-in guest name is required." });
-            }
-            if (!guestemail && !guestphone) {
-                return res.status(400).json({ message: "Walk-in guests must provide email or phone." });
-            }
-        } else {
-            return res.status(403).json({ message: "You don't have permission to create bookings" });
-        }
+    // Check room availability
+    const overlappingBookings = await Booking.find({
+      room_id: roomid,
+      bookingstatus: { $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+      check_in: { $lt: checkOutDate },
+      check_out: { $gt: checkInDate },
+    });
 
-        // Validate check-in/out dates
-        const checkInDate = new Date(checkin);
-        const checkOutDate = new Date(checkout);
+    if (overlappingBookings.length > 0)
+      return res
+        .status(400)
+        .json({ message: "Room not available for selected dates." });
 
+    const roomType = await RoomType.findById(room.roomtype);
+    if (!roomType)
+      return res.status(404).json({ message: "Room type not found." });
 
-        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
-            return res.status(400).json({ message: "Invalid check-in or check-out date." });
-        }
+    const nights = Math.ceil(
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const total_price = nights * roomType.pricepernight;
 
-        if (checkOutDate <= checkInDate) {
-            return res.status(400).json({ message: "Check-out date must be after check-in date." });
-        }
+    const booking = new Booking({
+      guest_id: finalGuestId ?? null,
+      guest_name: finalGuestName,
+      guest_email: finalGuestEmail,
+      guest_phone: finalGuestPhone,
+      room_id: roomid,
+      check_in: checkInDate,
+      check_out: checkOutDate,
+      bookingstatus: BookingStatus.PENDING,
+      total_price,
+    });
 
-        /* if (checkIn.getTime() < Date.now() || checkOut.getTime() < Date.now()) {
-            return res.status(400).json({
-                message: "Check-in date cannot be in the past"
-            });
-        } */
+    await booking.save();
 
-            const normalizeDate = (date: Date) =>
+    res
+      .status(201)
+      .json({ message: "Booking created successfully.", data: booking });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* export const createBooking = async (req: AuthRequest, res: Response) => {
+  try {
+    //const { guest_id, guest_name, guest_email, guest_phone, room_id, check_in, check_out } = req.body;
+    const { guestname, guestemail, guestphone, roomid, checkin, checkout } =
+      req.body;
+
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ message: "Oooppss.. Unauthorized Access..!" });
+    }
+
+    const user = await User.findById(req.user.sub);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Validate room
+    if (!roomid || !mongoose.Types.ObjectId.isValid(roomid)) {
+      return res.status(400).json({ message: "Invalid room ID." });
+    }
+
+    const room = await Room.findById(roomid);
+    if (!room) return res.status(404).json({ message: "Room not found." });
+
+    // 1. Booking by a registered guest (guest id)
+    // 2. Admin/receptionist can create a booking for walk-ins.
+
+    // So, Guest can be:
+    //  - Registered Guest - guest_id required
+    //  - Walk-in Guest - guest_name & email or phone required
+
+    let finalGuestId: mongoose.Types.ObjectId | undefined = undefined;
+    let finalGuestName = guestname || null;
+    let finalGuestEmail = guestemail || null;
+    let finalGuestPhone = guestphone || null;
+
+    if (user?.roles.includes(Role.GUEST)) {
+      // Registered GUEST cannot book for others - only for themselves
+      finalGuestId = user?._id;
+      finalGuestName = `${user?.firstname} ${user?.lastname}`;
+      finalGuestEmail = user?.email || "";
+      finalGuestPhone = user?.phone || "";
+    } else if (
+      user.roles.includes(Role.ADMIN) ||
+      user.roles.includes(Role.RECEPTIONIST)
+    ) {
+      // ADMIN / RECEPTIONIST - can book for walk-ins
+      if (!guestname) {
+        return res
+          .status(400)
+          .json({ message: "Walk-in guest name is required." });
+      }
+      if (!guestemail && !guestphone) {
+        return res
+          .status(400)
+          .json({ message: "Walk-in guests must provide email or phone." });
+      }
+    } else {
+      return res
+        .status(403)
+        .json({ message: "You don't have permission to create bookings" });
+    }
+
+    // Validate check-in/out dates
+    const checkInDate = new Date(checkin as string);
+    const checkOutDate = new Date(checkout as string);
+
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      return res
+        .status(400)
+        .json({ message: "Invalid check-in or check-out date." });
+    }
+
+    if (checkOutDate <= checkInDate) {
+      return res
+        .status(400)
+        .json({ message: "Check-out date must be after check-in date." });
+    }
+
+    // if (checkIn.getTime() < Date.now() || checkOut.getTime() < Date.now()) {
+    //    return res.status(400).json({
+    //        message: "Check-in date cannot be in the past"
+    //    });
+    //}
+
+    const normalizeDate = (date: Date) =>
       new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     const today = normalizeDate(new Date());
@@ -162,69 +366,69 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       });
     }
 
-        // Check room availability for the given period
-        const overlappingBookings = await Booking.find({
-            roomid,
-            bookingstatus: { $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
-            check_in: { $lt: checkOut },
-            check_out: { $gt: checkIn } 
-        });
+    // Check room availability for the given period
+    const overlappingBookings = await Booking.find({
+      roomid,
+      bookingstatus: { $in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+      check_in: { $lt: checkOutDate },
+      check_out: { $gt: checkInDate },
+    });
 
-        if (overlappingBookings.length > 0) {
-            return res.status(400).json({ message: "Room is not available for the selected dates." });
-        }
-
-        // Fetch room type to calculate price
-        const roomType = await RoomType.findById(room.roomtype);
-        if (!roomType) return res.status(404).json({ message: "Room type not found." });
-
-        // Calculate total price: number of nights * price per night
-        const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
-        const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const total_price = nights * roomType.pricepernight;
-
-
-        /* let bookingstatus = BookingStatus.PENDING
-        if (user?.roles.includes(Role.ADMIN) || user?.roles.includes(Role.RECEPTIONIST)) {
-            bookingstatus = BookingStatus.CONFIRMED; // staff/admin booking
-        } */
-
-        console.log("roomid:- ", roomid)
-        console.log("check_in:- ", checkin)
-        console.log("check_out:- ", checkout)
-        console.log("checkIn:- ", checkIn)
-        console.log("checkOut:- ", checkOut)
-        console.log("checkInDate:- ", checkInDate)
-        console.log("checkOutDate:- ", checkOutDate)
-    
-        // Create booking
-        const booking = new Booking({
-            guest_id: finalGuestId ?? null,
-            guest_name: finalGuestName,
-            guest_email: finalGuestEmail,
-            guest_phone: finalGuestPhone,
-            room_id: roomid,
-            check_in: checkInDate,
-            check_out: checkOutDate,
-            bookingstatus: BookingStatus.PENDING,
-            total_price
-        });
-
-        await booking.save();
-
-        // Populate room info in response
-        //await booking.populate("room_id");
-
-        res.status(201).json({
-            message: "Booking created successfully.",
-            data: booking
-        });
-
-    } catch (err: any) {
-        res.status(500).json({ message: err?.message });
+    if (overlappingBookings.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "Room is not available for the selected dates." });
     }
 
-}
+    // Fetch room type to calculate price
+    const roomType = await RoomType.findById(room.roomtype);
+    if (!roomType)
+      return res.status(404).json({ message: "Room type not found." });
+
+    // Calculate total price: number of nights * price per night
+    const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
+    const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const total_price = nights * roomType.pricepernight;
+
+    // let bookingstatus = BookingStatus.PENDING
+    //if (user?.roles.includes(Role.ADMIN) || user?.roles.includes(Role.RECEPTIONIST)) {
+    //    bookingstatus = BookingStatus.CONFIRMED; // staff/admin booking
+    //}
+
+    console.log("roomid:- ", roomid);
+    console.log("check_in:- ", checkin);
+    console.log("check_out:- ", checkout);
+    console.log("checkIn:- ", checkIn);
+    console.log("checkOut:- ", checkOut);
+    console.log("checkInDate:- ", checkInDate);
+    console.log("checkOutDate:- ", checkOutDate);
+
+    // Create booking
+    const booking = new Booking({
+      guest_id: finalGuestId ?? null,
+      guest_name: finalGuestName,
+      guest_email: finalGuestEmail,
+      guest_phone: finalGuestPhone,
+      room_id: roomid,
+      check_in: checkInDate,
+      check_out: checkOutDate,
+      bookingstatus: BookingStatus.PENDING,
+      total_price,
+    });
+
+    await booking.save();
+
+    // Populate room info in response
+    //await booking.populate("room_id");
+
+    res.status(201).json({
+      message: "Booking created successfully.",
+      data: booking,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err?.message });
+  }
+}; */
 
 export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
   try {
@@ -259,12 +463,12 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
       CONFIRMED: [BookingStatus.CHECKED_IN, BookingStatus.CANCELLED],
       CHECKED_IN: [BookingStatus.CHECKED_OUT],
       CHECKED_OUT: [],
-      CANCELLED: []
+      CANCELLED: [],
     };
 
     if (!validTransitions[booking.bookingstatus].includes(status)) {
       return res.status(400).json({
-        message: `Cannot change status from ${booking.bookingstatus} to ${status}`
+        message: `Cannot change status from ${booking.bookingstatus} to ${status}`,
       });
     }
 
@@ -280,28 +484,24 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
     if (status === BookingStatus.CHECKED_IN) {
       // Guest is physically inside the room
       room.availability = Availability.OCCUPIED;
-    }
-
-    else if (status === BookingStatus.CHECKED_OUT || status === BookingStatus.CANCELLED) {
+    } else if (
+      status === BookingStatus.CHECKED_OUT ||
+      status === BookingStatus.CANCELLED
+    ) {
       // Check if another active booking overlaps today
       const overlappingBooking = await Booking.findOne({
         room_id: room._id,
         bookingstatus: {
-          $in: [
-            BookingStatus.CONFIRMED,
-            BookingStatus.CHECKED_IN
-          ]
+          $in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN],
         },
         checkin_date: { $lte: today },
-        checkout_date: { $gt: today }
+        checkout_date: { $gt: today },
       });
 
       room.availability = overlappingBooking
         ? Availability.BOOKED
         : Availability.AVAILABLE;
-    }
-
-    else if (
+    } else if (
       status === BookingStatus.CONFIRMED &&
       today >= startDate &&
       today < endDate
@@ -315,98 +515,102 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response) => {
 
     return res.status(200).json({
       message: "Booking status updated successfully",
-      data: booking
+      data: booking,
     });
-
   } catch (err: any) {
     console.error("Update Booking Status Error:", err);
     return res.status(500).json({ message: err.message });
   }
 };
 
+export const updateBookingStatusOld = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // updating status
 
-export const updateBookingStatusOld = async (req: AuthRequest, res: Response) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;  // updating status
-
-        if (!req.user) {
-            return res.status(401).json({ message: "Unauthorized Access!" });
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ message: "Invalid booking ID." });
-        }
-
-        if (!Object.values(BookingStatus).includes(status)) {
-            return res.status(400).json({ message: "Invalid booking status." });
-        }
-
-        const booking = await Booking.findById(id);
-        if (!booking) {
-            return res.status(404).json({ message: "Booking not found." });
-        }
-
-        const room = await Room.findById(booking.room_id);
-        if (!room) {
-            return res.status(404).json({ message: "Associated room not found." });
-        }
-
-        //valid status transitions
-        const validTransitions: Record<BookingStatus, BookingStatus[]> = {
-            PENDING: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
-            CONFIRMED: [BookingStatus.CHECKED_IN, BookingStatus.CANCELLED],
-            CHECKED_IN: [BookingStatus.CHECKED_OUT],
-            CHECKED_OUT: [],
-            CANCELLED: []
-        };
-
-        if (!validTransitions[booking.bookingstatus].includes(status)) {
-            return res.status(400).json({
-                message: `Cannot transition from ${booking.bookingstatus} to ${status}`
-            });
-        }
-
-        booking.bookingstatus = status;
-        await booking.save();
-
-        if (status === BookingStatus.PENDING || status === BookingStatus.CONFIRMED) {
-            room.availability = Availability.BOOKED;
-        }
-
-        if (status === BookingStatus.CHECKED_IN) {
-            room.availability = Availability.OCCUPIED;
-        }
-
-        if (status === BookingStatus.CHECKED_OUT || status === BookingStatus.CANCELLED) {
-            const activeBookings = await Booking.find({
-                room_id: room._id,
-                bookingstatus: {
-                    $in: [
-                        BookingStatus.PENDING,
-                        BookingStatus.CONFIRMED,
-                        BookingStatus.CHECKED_IN
-                    ]
-                },
-                _id: { $ne: booking._id }
-            });
-
-            room.availability =
-                activeBookings.length > 0
-                    ? Availability.BOOKED
-                    : Availability.OCCUPIED;
-        }
-
-        await room.save();
-
-        res.status(201).json({ 
-            message: "Booking status updated successfully",
-            data: booking
-        });
-
-    } catch (err: any) {
-        res.status(500).json({ message: err.message });
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized Access!" });
     }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid booking ID." });
+    }
+
+    if (!Object.values(BookingStatus).includes(status)) {
+      return res.status(400).json({ message: "Invalid booking status." });
+    }
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    const room = await Room.findById(booking.room_id);
+    if (!room) {
+      return res.status(404).json({ message: "Associated room not found." });
+    }
+
+    //valid status transitions
+    const validTransitions: Record<BookingStatus, BookingStatus[]> = {
+      PENDING: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED],
+      CONFIRMED: [BookingStatus.CHECKED_IN, BookingStatus.CANCELLED],
+      CHECKED_IN: [BookingStatus.CHECKED_OUT],
+      CHECKED_OUT: [],
+      CANCELLED: [],
+    };
+
+    if (!validTransitions[booking.bookingstatus].includes(status)) {
+      return res.status(400).json({
+        message: `Cannot transition from ${booking.bookingstatus} to ${status}`,
+      });
+    }
+
+    booking.bookingstatus = status;
+    await booking.save();
+
+    if (
+      status === BookingStatus.PENDING ||
+      status === BookingStatus.CONFIRMED
+    ) {
+      room.availability = Availability.BOOKED;
+    }
+
+    if (status === BookingStatus.CHECKED_IN) {
+      room.availability = Availability.OCCUPIED;
+    }
+
+    if (
+      status === BookingStatus.CHECKED_OUT ||
+      status === BookingStatus.CANCELLED
+    ) {
+      const activeBookings = await Booking.find({
+        room_id: room._id,
+        bookingstatus: {
+          $in: [
+            BookingStatus.PENDING,
+            BookingStatus.CONFIRMED,
+            BookingStatus.CHECKED_IN,
+          ],
+        },
+        _id: { $ne: booking._id },
+      });
+
+      room.availability =
+        activeBookings.length > 0 ? Availability.BOOKED : Availability.OCCUPIED;
+    }
+
+    await room.save();
+
+    res.status(201).json({
+      message: "Booking status updated successfully",
+      data: booking,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 //export const deleteBooking = async (req: Request, res: Response) => {}

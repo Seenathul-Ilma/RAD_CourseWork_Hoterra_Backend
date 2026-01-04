@@ -288,6 +288,15 @@ export const getAllAvailablityByDate = async (req: Request, res: Response) => {
       roomTypesWithCounts.sort((a, b) => b.availableCount - a.availableCount);
     }
 
+     console.log("checkIn: ", checkIn);
+    console.log("checkOut: ", checkOut);
+
+    console.log("checkin: ", checkin);
+    console.log("checkout: ", checkout);
+
+    console.log("checkInDate: ", checkInDate);
+    console.log("checkOutDate: ", checkOutDate);
+
     res.status(200).json({
       message: "Available rooms fetched successfully",
       data: roomTypesWithCounts,
