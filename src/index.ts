@@ -33,12 +33,32 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS origin for frontend (including preflight OPTIONS requests)
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "https://rad-course-work-hoterra-frontend.vercel.app"],
-    methods: ["POST", "GET", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  })
-);
+// CORS configuration - MUST be before routes
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: Function) {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "https://rad-course-work-hoterra-frontend.vercel.app"
+    ];
+
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options("*", cors(corsOptions));
 
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/roomtype", roomTypeRouter)
@@ -63,6 +83,10 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
                 message: "File too large. Maximum size is 20MB per image."
             });
         }
+    }
+
+    if (err.message === "Not allowed by CORS") {
+      console.error("CORS Error:", err);
     }
 
     next(err);
