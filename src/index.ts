@@ -24,6 +24,7 @@ const DEFAULT_ADMIN_FIRSTNAME = process.env.DEFAULT_ADMIN_FIRSTNAME as string
 const DEFAULT_ADMIN_LASTNAME = process.env.DEFAULT_ADMIN_LASTNAME
 const DEFAULT_ADMIN_EMAIL = process.env.DEFAULT_ADMIN_EMAIL as string
 const DEFAULT_ADMIN_PASSWORD = process.env.DEFAULT_ADMIN_PASSWORD as string
+const DEFAULT_ADMIN_PHONE = process.env.DEFAULT_ADMIN_PHONE as string
 
 // Create an Express app instance to handle routes, middleware, and server configurations
 const app = express();
@@ -84,6 +85,7 @@ mongoose
             lastname: DEFAULT_ADMIN_LASTNAME,
             email: DEFAULT_ADMIN_EMAIL,
             password: hashedPassword,
+            phone: DEFAULT_ADMIN_PHONE,
             roles: [Role.ADMIN],
             accountstatus: Status.ACTIVE
           })
