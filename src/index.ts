@@ -35,7 +35,7 @@ app.use(express.json());
 // Enable CORS origin for frontend (including preflight OPTIONS requests)
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "https://rad-course-work-hoterra-frontend.vercel.app"],
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
