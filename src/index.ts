@@ -105,9 +105,6 @@ mongoose
     process.exit(1);
   });
 
-app.get("/",(req,res) => {
-  res.send("Backend is running..!")
-})
 
 app.get("/api/v1/health", async (req: Request, res: Response) => {
   const mongoState = mongoose.connection.readyState;
@@ -121,6 +118,10 @@ app.get("/api/v1/health", async (req: Request, res: Response) => {
     environment: process.env.NODE_ENV || "development"
   });
 });
+
+app.get("/",(req,res) => {
+  res.send("Backend is running..!")
+})
 
 // Start the server 
 app.listen(SERVER_PORT, () => {

@@ -292,14 +292,18 @@ export const saveRoom = async (req: AuthRequest, res: Response) => {
 
     let parsedRoomAmenities: string[] = [];
 
-    if (roomamenities) {
-      parsedRoomAmenities =
-        typeof roomamenities === "string" && roomamenities.trim() !== ""
-          ? roomamenities
-              .split(",")
-              .map((a) => a.trim())
-              .filter((a) => a.length > 0)
-          : [];
+    if (roomamenities !== undefined) {
+      if (Array.isArray(roomamenities)) {
+        parsedRoomAmenities = roomamenities;
+      } else if (
+        typeof roomamenities === "string" &&
+        roomamenities.trim() !== ""
+      ) {
+        parsedRoomAmenities = roomamenities
+          .split(",")
+          .map((a) => a.trim())
+          .filter((a) => a.length > 0);
+      }
     }
 
     if (availability && availability != Availability.AVAILABLE) {
