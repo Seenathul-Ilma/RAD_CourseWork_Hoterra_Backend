@@ -15,11 +15,10 @@ import availabilityRouter from "./routes/availability.routes"
 import { Role, Status, User } from "./models/User"
 
 import dotenv from "dotenv";
-import { connectMongo } from "./lib/mongoose";
 dotenv.config(); // Config the '.env' file to load environment variables 
 
-//const SERVER_PORT = process.env.SERVER_PORT
-//const MONGO_URI = process.env.MONGO_URI as string
+const SERVER_PORT = process.env.SERVER_PORT
+const MONGO_URI = process.env.MONGO_URI as string
 
 const DEFAULT_ADMIN_FIRSTNAME = process.env.DEFAULT_ADMIN_FIRSTNAME as string
 const DEFAULT_ADMIN_LASTNAME = process.env.DEFAULT_ADMIN_LASTNAME
@@ -70,9 +69,8 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Connect to MongoDB
-/* mongoose
-  .connect(MONGO_URI) */
-  connectMongo()
+mongoose
+  .connect(MONGO_URI)
   .then(async() => {
     console.log("MongoDB connected");
 
@@ -125,8 +123,8 @@ app.get("/api/v1/health", async (req: Request, res: Response) => {
 });
 
 // Start the server 
-/* app.listen(SERVER_PORT, () => {
+app.listen(SERVER_PORT, () => {
   console.log(`Server is running on port: ${SERVER_PORT}`);
-}); */
+});
 
 export default app
