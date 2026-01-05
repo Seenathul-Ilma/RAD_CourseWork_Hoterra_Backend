@@ -4,18 +4,18 @@ import cors from "cors";
 import bcrypt from "bcryptjs"
 import multer from "multer";  
 
-import authRouter from "../routes/auth.routes"
-import roomTypeRouter from "../routes/roomtype.routes"
-import roomRouter from "../routes/room.routes"
-import inviteRouter from "../routes/invite.routes"
-import amenityRouter from "../routes/amenity.routes"
-import bookingRouter from "../routes/booking.routes"
-import availabilityRouter from "../routes/availability.routes"
+import authRouter from "./routes/auth.routes"
+import roomTypeRouter from "./routes/roomtype.routes"
+import roomRouter from "./routes/room.routes"
+import inviteRouter from "./routes/invite.routes"
+import amenityRouter from "./routes/amenity.routes"
+import bookingRouter from "./routes/booking.routes"
+import availabilityRouter from "./routes/availability.routes"
 
-import { Role, Status, User } from "../models/User"
+import { Role, Status, User } from "./models/User"
 
 import dotenv from "dotenv";
-import { connectMongo } from "../lib/mongoose";
+import { connectMongo } from "./lib/mongoose";
 dotenv.config(); // Config the '.env' file to load environment variables 
 
 //const SERVER_PORT = process.env.SERVER_PORT
