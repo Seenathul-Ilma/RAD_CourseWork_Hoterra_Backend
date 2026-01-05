@@ -4,18 +4,18 @@ import cors from "cors";
 import bcrypt from "bcryptjs"
 import multer from "multer";  
 
-import authRouter from "./routes/auth.routes"
-import roomTypeRouter from "./routes/roomtype.routes"
-import roomRouter from "./routes/room.routes"
-import inviteRouter from "./routes/invite.routes"
-import amenityRouter from "./routes/amenity.routes"
-import bookingRouter from "./routes/booking.routes"
-import availabilityRouter from "./routes/availability.routes"
+import authRouter from "../routes/auth.routes"
+import roomTypeRouter from "../routes/roomtype.routes"
+import roomRouter from "../routes/room.routes"
+import inviteRouter from "../routes/invite.routes"
+import amenityRouter from "../routes/amenity.routes"
+import bookingRouter from "../routes/booking.routes"
+import availabilityRouter from "../routes/availability.routes"
 
-import { Role, Status, User } from "./models/User"
+import { Role, Status, User } from "../models/User"
 
 import dotenv from "dotenv";
-import { connectMongo } from "./lib/mongoose";
+import { connectMongo } from "../lib/mongoose";
 dotenv.config(); // Config the '.env' file to load environment variables 
 
 //const SERVER_PORT = process.env.SERVER_PORT
@@ -69,6 +69,15 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     next(err);
 });
 
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error("Error:", err);
+
+  res.status(err.status || 500).json({
+    message: err.message || "Internal server error",
+  });
+});
+
+
 // Connect to MongoDB
 /* mongoose
   .connect(MONGO_URI) */
@@ -107,12 +116,20 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     process.exit(1);
   });
 
+app.get("/",(req,res) => {
+  res.send("Backend is running..!")
+})
+
 app.get("/api/v1/health", async (req: Request, res: Response) => {
-  const mongoState = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  const mongoState = mongoose.connection.readyState;
+  
   res.status(200).json({
     status: "OK",
-    mongoState,
-    timestamp: new Date().toISOString()
+    mongoConnected: mongoState === 1,
+    mongoState: mongoState === 1 ? "connected" : "disconnected",
+    readyState: mongoState, // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
   });
 });
 
