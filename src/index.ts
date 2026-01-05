@@ -35,21 +35,30 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // CORS - More robust configuration
-const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    FRONTEND_URL
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-  maxAge: 86400 // Cache preflight for 24 hours
-};
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://rad-course-work-hoterra-frontend.vercel.app",
+        FRONTEND_URL
+      ];
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Handle preflight requests
+      // Allow server-to-server / Postman / curl
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Health check endpoint (for keeping warm)
 app.get("/api/v1/health", (req: Request, res: Response) => {
@@ -216,38 +225,10 @@ mongoose.connection.on("reconnected", () => {
 connectMongo();
 
 // Start server
-const server = app.listen(SERVER_PORT, () => {
+/* const server = app.listen(SERVER_PORT, () => {
   console.log(`✓ Server running on port: ${SERVER_PORT}`);
   console.log(`Environment: ${NODE_ENV}`)
-});
+}); */
 
-// ============ GRACEFUL SHUTDOWN ============
-process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, shutting down gracefully...");
-  server.close(async () => {
-    try {
-      await mongoose.disconnect();
-      console.log("✓ MongoDB disconnected");
-      process.exit(0);
-    } catch (err) {
-      console.error("Error during shutdown:", err);
-      process.exit(1);
-    }
-  });
-});
-
-process.on("SIGINT", async () => {
-  console.log("SIGINT received, shutting down gracefully...");
-  server.close(async () => {
-    try {
-      await mongoose.disconnect();
-      console.log("✓ MongoDB disconnected");
-      process.exit(0);
-    } catch (err) {
-      console.error("Error during shutdown:", err);
-      process.exit(1);
-    }
-  });
-});
 
 export default app;

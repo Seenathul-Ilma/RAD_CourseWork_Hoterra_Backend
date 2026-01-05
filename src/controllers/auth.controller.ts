@@ -214,13 +214,13 @@ export const adminRegister = async (req: AuthRequest, res: Response) => {
 }
 
 
-export const staffRegister = async (req: Request, res: Response) => {
+export const staffRegister = async (req: AuthRequest, res: Response) => {
     try {
 
-        /* if(!req.user) {
+        if(!req.user) {
             return res.status(403).json({ message: "Oooppss.. Unauthorized Access..!" })
         }
- */
+ 
         const { firstname, lastname, email, phone, password, role, token } = req.body
 
         if(!firstname || !lastname || !email || !password || !role || !token) {

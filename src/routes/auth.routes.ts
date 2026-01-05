@@ -15,7 +15,7 @@ router.post("/staff/register", staffRegister)
 
 // PROTECTED
 // ADMIN, RECEPTIONIST & GUEST
-router.get("/me", authenticate, getMyDetails)
+router.get("/me", authenticate, authorization(Role.ADMIN, Role.RECEPTIONIST), getMyDetails)
 
 // PROTECTED
 // ADMIN ONLY -> need to create middleware for ensure the req is from ADMIN
