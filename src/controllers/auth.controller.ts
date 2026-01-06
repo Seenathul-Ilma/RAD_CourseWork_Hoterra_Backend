@@ -21,7 +21,8 @@ export const register = async (req: Request, res: Response ) => {
         }
 
         //if( role !== Role.GUEST && role !== Role.PROPERTY_OWNER ) {
-        if( role !== Role.GUEST && role !== Role.RECEPTIONIST ) {
+        //if( role !== Role.GUEST && role !== Role.RECEPTIONIST ) {
+        if( role !== Role.GUEST) {
             return res.status(400).json({ message: `Oooppss.. ${role} is not a valid role.` })
         }
 
@@ -214,12 +215,8 @@ export const adminRegister = async (req: AuthRequest, res: Response) => {
 }
 
 
-export const staffRegister = async (req: AuthRequest, res: Response) => {
+export const staffRegister = async (req: Request, res: Response) => {
     try {
-
-        if(!req.user) {
-            return res.status(403).json({ message: "Oooppss.. Unauthorized Access..!" })
-        }
  
         const { firstname, lastname, email, phone, password, role, token } = req.body
 
@@ -228,6 +225,10 @@ export const staffRegister = async (req: AuthRequest, res: Response) => {
         }
 
         console.log("Checking invitation for:", email, token, new Date());
+
+        if( role !== InviteRole.ADMIN && role !== InviteRole.RECEPTIONIST ) {
+            return res.status(400).json({ message: `Oooppss.. ${role} is not a valid role.` })
+        }
 
         // Find the invitation by token (regardless of email first)
         const invitation = await Invitation.findOne({ token, isUsed: false, expiryDate: { $gt: new Date() } });
@@ -283,7 +284,11 @@ export const staffRegister = async (req: AuthRequest, res: Response) => {
         await invitation.save();
 
         res.status(201).json({
-            message: `${role} registration successful..!`,
+            message: 
+                //role === Role.PROPERTY_OWNER
+                role === InviteRole.RECEPTIONIST
+                    ? "Registration successful.! Your receptionist account is under review and will be activated soon."
+                    : `${role} registration successful..!`,
             data: {
                 id: newUser._id,
                 email: newUser.email,

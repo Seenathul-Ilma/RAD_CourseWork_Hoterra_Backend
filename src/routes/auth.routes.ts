@@ -9,8 +9,11 @@ const router = Router()
 // PUBLIC
 router.post("/refresh", refreshAccessToken)
 router.post("/login", login)
+
+// GUEST ONLY
 router.post("/register", register)
 
+// ADMIN & RECEPTIONIST
 router.post("/staff/register", staffRegister)
 
 // PROTECTED
