@@ -19,6 +19,7 @@ dotenv.config(); // Config the '.env' file to load environment variables
 
 const SERVER_PORT = process.env.SERVER_PORT
 const MONGO_URI = process.env.MONGO_URI as string
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"
 
 const DEFAULT_ADMIN_FIRSTNAME = process.env.DEFAULT_ADMIN_FIRSTNAME as string
 const DEFAULT_ADMIN_LASTNAME = process.env.DEFAULT_ADMIN_LASTNAME
@@ -35,7 +36,7 @@ app.use(express.json());
 // Enable CORS origin for frontend (including preflight OPTIONS requests)
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://rad-course-work-hoterra-frontend.vercel.app"],
+    origin: ["http://localhost:5173", FRONTEND_URL],
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
