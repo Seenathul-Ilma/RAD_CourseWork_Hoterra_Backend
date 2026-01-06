@@ -297,3 +297,104 @@ export const staffRegister = async (req: AuthRequest, res: Response) => {
     }
 }
 
+export const getStaffUsers = async (req: AuthRequest, res: Response) => {
+  try {
+
+    if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!req.user.roles.includes(Role.ADMIN)) {
+        return res.status(403).json({ message: "Admin access only" });
+    }
+
+
+    const { role, page = 1, limit = 10 } = req.query;
+
+    if (!role || ![Role.ADMIN, Role.RECEPTIONIST].includes(role as Role)) {
+      return res.status(400).json({ message: "Invalid or missing role" });
+    }
+
+    const pageNumber = Number(page);
+    const pageSize = Number(limit);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const filter = {
+      roles: role
+    };
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("firstname lastname email phone accountstatus")
+        .skip(skip)
+        .limit(pageSize)
+        .sort({ createdAt: -1 }),
+
+      User.countDocuments(filter)
+    ]);
+
+    const formattedUsers = users.map(user => ({
+      id: user._id,
+      name: `${user.firstname} ${user.lastname}`,
+      email: user.email,
+      phone: user.phone,
+      status: user.accountstatus
+    }));
+
+    res.status(200).json({
+      message: "Staff users fetched successfully",
+      data: formattedUsers,
+      pagination: {
+        total,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages: Math.ceil(total / pageSize)
+      }
+    });
+
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+export const deleteStaffUser = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!req.user.roles.includes(Role.ADMIN)) {
+        return res.status(403).json({ message: "Admin access only" });
+    }
+
+
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Prevent deleting guests or self
+    if (!user.roles.includes(Role.ADMIN) && !user.roles.includes(Role.RECEPTIONIST)) {
+      return res.status(400).json({ message: "Only staff users can be deleted" });
+    }
+
+    if (user._id.toString() === req.user.sub) {
+      return res.status(400).json({ message: "You cannot delete your own account" });
+    }
+
+    await user.deleteOne();
+
+    res.status(200).json({
+      message: "Staff user deleted successfully"
+    });
+
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
