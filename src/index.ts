@@ -19,8 +19,8 @@ dotenv.config(); // Config the '.env' file to load environment variables
 
 const SERVER_PORT = process.env.SERVER_PORT
 const MONGO_URI = process.env.MONGO_URI as string
-//const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://rad-course-work-hoterra-frontend.vercel.app"
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"
+//const FRONTEND_URL = process.env.FRONTEND_URL || "https://rad-course-work-hoterra-frontend.vercel.app"
 
 const DEFAULT_ADMIN_FIRSTNAME = process.env.DEFAULT_ADMIN_FIRSTNAME as string
 const DEFAULT_ADMIN_LASTNAME = process.env.DEFAULT_ADMIN_LASTNAME
