@@ -6,6 +6,10 @@ import { Role } from "../models/User"
 
 const router = Router()
 
+router.get("/test", (req, res) => {
+  res.json({ message: "Auth router is working!", req });
+});
+
 // PUBLIC
 router.post("/refresh", refreshAccessToken)
 router.post("/login", login)
