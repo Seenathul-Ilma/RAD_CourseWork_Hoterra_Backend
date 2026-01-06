@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { register, login, refreshAccessToken, getMyDetails, staffRegister, getStaffUsers, deleteStaffUser } from "../controllers/auth.controller"
+import { register, login, refreshAccessToken, getMyDetails, staffRegister, getStaffUsers, deleteStaffUser, updatStaffAccountStatus } from "../controllers/auth.controller"
 import { authenticate } from "../middlewares/auth"
 import { authorization } from "../middlewares/roles"
 import { Role } from "../models/User"
@@ -22,6 +22,8 @@ router.post("/staff/register", staffRegister)
 router.get("/me", authenticate, getMyDetails)
 
 router.get("/staff", authenticate, authorization(Role.ADMIN), getStaffUsers)
+
+router.patch("/update/status/:id", authenticate, authorization(Role.ADMIN), updatStaffAccountStatus)
 
 router.delete("/staff/:id", authenticate, authorization(Role.ADMIN), deleteStaffUser)
 
