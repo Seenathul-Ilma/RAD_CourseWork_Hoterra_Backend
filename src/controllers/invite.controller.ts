@@ -70,7 +70,8 @@ export const createInvitation = async (req: AuthRequest, res: Response) => {
 
     // Registration URL (React Frontend - User opens registration with token)
     //const registrationUrl = `http://localhost:5173/register?role=${inviterole}&token=${token}`;
-    const registrationUrl = `http://localhost:5173/register?role=${encodeURIComponent(inviterole)}&token=${token}`;
+    //const registrationUrl = `http://localhost:5173/register?role=${encodeURIComponent(inviterole)}&token=${token}`;
+    const registrationUrl = `https://rad-course-work-hoterra-frontend.vercel.app/register?role=${encodeURIComponent(inviterole)}&token=${token}`;
 
     try {
         const emailInfo = await transporter.sendMail({
