@@ -8,7 +8,7 @@ import dotenv from "dotenv"
 import { AuthRequest } from "../middlewares/auth";
 dotenv.config()
 
-const HOTERRA_EMAIL_ADDRESS = process.env.HOTERRA_EMAIL_ADDRESS as string
+const HOTERRA_EMAIL_ADDRESS = process.env.HOTERRA_EMAIL_ADDRESS as string || "seenathulilma121243@gmail.com"
 
 export const createInvitation = async (req: AuthRequest, res: Response) => {
   try {
