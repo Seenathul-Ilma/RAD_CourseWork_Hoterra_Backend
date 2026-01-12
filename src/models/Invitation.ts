@@ -1,9 +1,10 @@
 // models/Invitation.js
 import mongoose, { Document, Schema } from "mongoose";
+import { Role } from "./User";
 
 export enum InviteRole {
-    ADMIN="ADMIN",
-    RECEPTIONIST="RECEPTIONIST",
+    ADMIN=Role.ADMIN,
+    RECEPTIONIST=Role.RECEPTIONIST
 }
 
 export interface IInvitation extends Document{

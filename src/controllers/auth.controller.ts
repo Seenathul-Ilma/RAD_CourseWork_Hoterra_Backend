@@ -24,7 +24,7 @@ export const register = async (req: Request, res: Response ) => {
         //if( role !== Role.GUEST && role !== Role.PROPERTY_OWNER ) {
         //if( role !== Role.GUEST && role !== Role.RECEPTIONIST ) {
         if( role !== Role.GUEST) {
-            return res.status(400).json({ message: `Oooppss.. ${role} is not a valid role.` })
+            return res.status(400).json({ message: `Oooppss.. ${role} is not a valid role. (Guest Register Only)` })
         }
 
         const existingUser = await User.findOne({ email })
