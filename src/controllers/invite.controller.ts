@@ -112,7 +112,7 @@ export const createInvitation = async (req: AuthRequest, res: Response) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error", error });
   }
 };
 
