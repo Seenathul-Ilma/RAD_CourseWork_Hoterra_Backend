@@ -405,23 +405,22 @@ export const deleteStaffUser = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const updatStaffAccountStatus = async (req: Request, res: Response) => {
+export const updatStaffAccountStatus = async (req: AuthRequest, res: Response) => {
 
-    console.log("✅ UPDATE STATUS ROUTE HIT - ID:", req.params.id);  // Add this
-  console.log("✅ UPDATE STATUS BODY:", req.body);  // Add this
-  
+    console.log("UPDATE STATUS ROUTE HIT - ID:", req.params.id);  
+  console.log("UPDATE STATUS BODY:", req.body);  
 
     try {
         const { id } = req.params;
         const { status } = req.body;
     
-        /* if (!req.user) {
+        if (!req.user) {
           return res.status(401).json({ message: "Unauthorized access!" });
         }
 
         if (!req.user.roles.includes(Role.ADMIN)) {
             return res.status(403).json({ message: "Admin access only" });
-        } */
+        }
     
         if (!mongoose.Types.ObjectId.isValid(id)) {
           return res.status(400).json({ message: "Invalid User ID." });
@@ -433,7 +432,7 @@ export const updatStaffAccountStatus = async (req: Request, res: Response) => {
     
         const user = await User.findById(id);
         if (!user) {
-          return res.status(404).json({ message: "User not found." });
+          return res.status(404).json({ message: "Staff not found." });
         }
     
        const validTransitions: Record<Status, Status[]> = {

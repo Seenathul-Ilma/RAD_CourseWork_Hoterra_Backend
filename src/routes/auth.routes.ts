@@ -7,7 +7,7 @@ import { Role } from "../models/User"
 const router = Router()
 
 router.get("/test", (req, res) => {
-  res.json({ message: "Auth router is working!", req });
+  res.json({ message: "Auth router is working!"});
 });
 
 // PUBLIC
@@ -28,7 +28,7 @@ router.get("/me", authenticate, getMyDetails)
 router.get("/staff", authenticate, authorization(Role.ADMIN), getStaffUsers)
 
 //router.patch("/update/status/:id", authenticate, authorization(Role.ADMIN), updatStaffAccountStatus)
-router.patch("/update/status/:id", updatStaffAccountStatus)
+router.patch("/update/status/:id", authenticate, authorization(Role.ADMIN), updatStaffAccountStatus)
 
 router.delete("/staff/:id", authenticate, authorization(Role.ADMIN), deleteStaffUser)
 
