@@ -227,9 +227,9 @@ export const staffRegister = async (req: Request, res: Response) => {
 
         console.log("Checking invitation for:", email, token, new Date());
 
-        if( role !== InviteRole.ADMIN && role !== InviteRole.RECEPTIONIST ) {
+        /* if( role !== InviteRole.ADMIN && role !== InviteRole.RECEPTIONIST ) {
             return res.status(400).json({ message: `Oooppss.. ${role} is not a valid role.` })
-        }
+        } */
 
         // Find the invitation by token (regardless of email first)
         const invitation = await Invitation.findOne({ token, isUsed: false, expiryDate: { $gt: new Date() } });
@@ -260,7 +260,9 @@ export const staffRegister = async (req: Request, res: Response) => {
         //const userRole = validInviteRoles.includes(role) ? role : InviteRole.RECEPTIONIST;
 
         if (!validInviteRoles.includes(role)) {
-            throw new Error("Invalid role");
+            return res.status(400).json({
+                message: `Oooppss.. ${role} is not a valid role.`
+            });
         }
         const userRole = role;
 
