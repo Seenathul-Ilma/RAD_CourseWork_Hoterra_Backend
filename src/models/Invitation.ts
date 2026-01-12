@@ -13,12 +13,12 @@ export interface IInvitation extends Document{
     token: string,
     isUsed: boolean,
     expiryDate: Date,
-    usedAt: Date
+    usedAt?: Date
 }
 
 const invitationSchema = new Schema<IInvitation>(
     {
-        email: { type: String, required: true, unique: true },
+        email: { type: String, required: true},
         inviterole: { type: String, enum: Object.values(InviteRole), required: true, default: InviteRole.RECEPTIONIST },
         token: { type: String, required: true, unique: true },
         isUsed: { type: Boolean, default: false },
@@ -28,6 +28,12 @@ const invitationSchema = new Schema<IInvitation>(
     {
         timestamps: true   // createdAt and updatedAt times (according to server located timezone)
     }
+);
+
+// Compound unique index
+invitationSchema.index(
+  { email: 1, isUsed: 1 },
+  { unique: true }
 );
 
 export const Invitation = mongoose.model<IInvitation>("Invitation", invitationSchema)
